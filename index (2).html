@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dark Storm</title>
+<style>
+:root{--a:#8b5cf6;--b:#06b6d4;--bg:#07060f;--card:#12101f;--tx:#eceaff;--mu:#8d8aa8;--ln:#26223d}
+*{box-sizing:border-box;margin:0;font-family:Cairo,Tahoma,Arial,sans-serif}
+body{background:radial-gradient(circle at 80% -10%,color-mix(in srgb,var(--a) 28%,transparent),transparent 50%),var(--bg);color:var(--tx);min-height:100vh;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+body[data-t=client]{--a:#06b6d4;--b:#22d3ee}
+body[data-t=emp]{--a:#22c55e;--b:#a3e635}
+body[data-t=sup]{--a:#f59e0b;--b:#fb7185}
+body[data-t=admin]{--a:#e11d48;--b:#8b5cf6}
+.w{max-width:960px;margin:auto;padding:14px}
+.logo{font-size:30px;font-weight:900;letter-spacing:2px;background:linear-gradient(90deg,var(--a),var(--b));-webkit-background-clip:text;color:transparent;text-shadow:0 0 30px var(--a)}
+.hero{text-align:center;padding:34px 10px 18px}.hero p{color:var(--mu);margin-top:6px}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:16px;padding:14px;margin:10px 0;box-shadow:0 0 24px color-mix(in srgb,var(--a) 10%,transparent)}
+.card h3{color:var(--a);margin-bottom:6px}.card small{color:var(--mu)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(min-width:700px){.grid.g4{grid-template-columns:repeat(4,1fr)}}
+.pb{border:0;border-radius:16px;padding:18px 8px;color:#fff;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 6px 24px rgba(0,0,0,.4)}
+.pb span{display:block;font-size:26px}
+button,.btn{background:linear-gradient(90deg,var(--a),var(--b));color:#fff;border:0;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer;font-size:14px}
+button.g{background:transparent;border:1px solid var(--ln);color:var(--mu)}button.d{background:#7f1d1d}
+input,textarea,select{width:100%;background:#0b0a16;border:1px solid var(--ln);color:var(--tx);border-radius:10px;padding:10px;margin:5px 0;font-size:15px}
+input:focus,textarea:focus{outline:0;border-color:var(--a)}
+.nav{display:flex;gap:6px;overflow-x:auto;padding:8px 0;position:sticky;top:0;background:var(--bg);z-index:5}
+.nav button{white-space:nowrap;background:var(--card);border:1px solid var(--ln);color:var(--mu)}
+.nav button.on{background:linear-gradient(90deg,var(--a),var(--b));color:#fff;border:0}
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.bx{max-width:380px;margin:30px auto}
+.row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.row>*{flex:1;min-width:90px}
+.tag{display:inline-block;background:color-mix(in srgb,var(--a) 25%,transparent);color:var(--a);border-radius:8px;padding:2px 8px;font-size:12px}
+.ok{color:#4ade80}.no{color:#f87171}
+.num{font-size:30px;font-weight:900;color:var(--a)}
+.sc{overflow-x:auto}
+</style>
+</head>
+<body>
+<div class="w" id="app"></div>
+<script>
+const KEY='ds_db_v1';
+const rnd=n=>{const c='abcdefghjkmnpqrstuvwxyz23456789';let s='';for(let i=0;i<n;i++)s+=c[Math.random()*c.length|0];return s};
+const pad=n=>String(n).padStart(2,'0');
+function init(){
+ const mk=(p,l)=>Array.from({length:30},(_,i)=>({code:p+pad(i+1),name:l+' '+(i+1),pw:rnd(3)+'-'+rnd(4),phone:'',note:''}));
+ return{ownerPw:'h44',supPw:'h303',emps:mk('E','موظف'),clients:mk('C','عميل'),
+ news:[{t:'مرحباً بكم في Dark Storm',b:'منصة واحدة تجمع العملاء والموظفين والإدارة.',d:new Date().toLocaleDateString('ar-EG')}],
+ tasks:[{t:'مهمة الأسبوع',b:'اكتب هنا الشغل المطلوب من الموظفين.',d:new Date().toLocaleDateString('ar-EG')}],
+ cnews:[{t:'جديد للعملاء',b:'اكتب هنا آخر المستجدات للعملاء.',d:new Date().toLocaleDateString('ar-EG')}],
+ ideas:[],log:[]}}
+let db;try{db=JSON.parse(localStorage.getItem(KEY))||init()}catch(e){db=init()}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){}};save();
+let sess=null;try{sess=JSON.parse(sessionStorage.getItem('s')||'null')}catch(e){}
+let page='home',role='client',tab='';
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $=s=>document.querySelector(s);
+const now=()=>new Date().toLocaleString('ar-EG');
+const RN={client:'العملاء',emp:'الموظفين',sup:'المشرف العام',admin:'الإدارة'};
+// sound
+let AC;function click(){try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain();o.type='square';o.frequency.setValueAtTime(1400,AC.currentTime);o.frequency.exponentialRampToValueAtTime(300,AC.currentTime+.07);g.gain.setValueAtTime(.9,AC.currentTime);g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+.09);o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+.1)}catch(e){}}
+document.addEventListener('pointerdown',e=>{if(e.target.closest('button,input,textarea,select,a'))click()});
+
+const newsCards=(L,del)=>L.length?L.map((n,i)=>`<div class="card"><h3>${esc(n.t)}</h3><p>${esc(n.b)}</p><small>${esc(n.d)}</small>${del?` <button class="d" data-del="${del}:${i}">حذف</button>`:''}</div>`).join(''):'<div class="card"><small>لا يوجد شيء بعد</small></div>';
+
+function home(){return`<div class="hero"><div class="logo">DARK STORM</div><p>البوابة الرئيسية – الأخبار</p></div>
+<div class="grid g4">
+<button class="pb" style="background:#0891b2" data-go="client"><span>👤</span>العملاء</button>
+<button class="pb" style="background:#16a34a" data-go="emp"><span>🛠️</span>الموظفين</button>
+<button class="pb" style="background:#d97706" data-go="sup"><span>👁️</span>المشرف العام</button>
+<button class="pb" style="background:#be123c" data-go="admin"><span>👑</span>الإدارة</button></div>
+<h2 style="margin:18px 0 4px">📰 آخر الأخبار</h2>${newsCards(db.news)}`}
+
+function loginV(){document.body.dataset.t=role;
+ const nm=role=='admin'||role=='emp'||role=='client';
+ return`<div class="bx card"><div class="logo" style="text-align:center">DARK STORM</div><h3 style="text-align:center;margin:8px 0">دخول ${RN[role]}</h3>
+ ${nm?`<input id="u" placeholder="${role=='admin'?'الاسم':'الاسم أو الكود'}" autocomplete="off">`:''}
+ ${role=='client'?'':'<input id="p" type="password" placeholder="كلمة المرور">'}<div id="er" class="no"></div>
+ <button style="width:100%;margin-top:6px" data-act="login">دخول</button>
+ <button class="g" style="width:100%;margin-top:6px" data-go="home">رجوع</button></div>`}
+
+function doLogin(){const u=($('#u')?.value||'').trim().toLowerCase(),p=$('#p')?.value||'';let ok=null;
+ if(role=='admin'&&['هشام وليد','hisham walid'].includes(u)&&p==db.ownerPw)ok={role,name:'هشام وليد'};
+ else if(role=='sup'&&p==db.supPw)ok={role,name:'المشرف العام'};
+ else if(role=='client'){const x=u&&db.clients.find(a=>a.code.toLowerCase()==u||a.name.toLowerCase()==u);if(x)ok={role,name:x.name,code:x.code}}
+ else if(role=='emp'){const x=db.emps.find(a=>(a.code.toLowerCase()==u||a.name.toLowerCase()==u)&&a.pw==p);if(x)ok={role,name:x.name,code:x.code}}
+ db.log.unshift({t:now(),role,u:ok?ok.name:(u||'-'),ok:!!ok});db.log=db.log.slice(0,300);save();
+ if(!ok){$('#er').textContent='بيانات الدخول غير صحيحة';return}
+ sess=ok;try{sessionStorage.setItem('s',JSON.stringify(ok))}catch(e){}tab={admin:'dash',sup:'ideas',emp:'tasks',client:'upd'}[role];render()}
+
+const TABS={admin:[['dash','📊 لوحة'],['news','📰 الأخبار'],['tasks','📋 أخبار الموظفين'],['cnews','🔔 جديد العملاء'],['emps','🛠️ الموظفين'],['clients','👤 العملاء'],['ideas','💡 المشرف'],['log','🕵️ السجل'],['set','⚙️ إعدادات']],
+ sup:[['ideas','💡 الاستنتاجات والمشاريع'],['news','📰 الأخبار']],emp:[['tasks','📋 صفحة أخبار الموظفين'],['me','🪪 بياناتي']],client:[['upd','🔔 الجديد'],['me','🪪 بياناتي']]};
+
+function addForm(k){return`<div class="card"><input id="ft" placeholder="العنوان"><textarea id="fb" rows="3" placeholder="التفاصيل"></textarea>
+${k=='ideas'?'<select id="fk"><option>فكرة</option><option>استنتاج</option><option>مشروع</option></select>':''}
+<button data-add="${k}">➕ إضافة</button></div>`}
+function ideasV(){const own=sess.role=='admin';return addForm('ideas')+(db.ideas.length?db.ideas.map((n,i)=>`<div class="card"><span class="tag">${esc(n.k)}</span><h3>${esc(n.t)}</h3><p>${esc(n.b)}</p><small>${esc(n.d)}</small>${own?` <button class="d" data-del="ideas:${i}">حذف</button>`:''}</div>`).join(''):'<div class="card"><small>لا يوجد شيء بعد</small></div>')}
+function listV(k){return(sess.role=='admin'||(sess.role=='sup'&&k=='news')?addForm(k):'')+newsCards(db[k],sess.role=='admin'?k:'')}
+function peopleV(k){return`<div class="card"><small>كل التعديلات تُحفظ تلقائياً. ${k=='clients'?'العملاء يدخلون بالاسم أو الكود فقط بدون كلمة مرور.':'فقط أنت تشوف كلمات المرور.'}</small></div><div class="row"><button data-addp="${k}">➕ حساب جديد</button></div>`+db[k].map((a,i)=>`<div class="card"><span class="tag">${esc(a.code)}</span><div class="row"><input data-p="${k}:${i}:name" value="${esc(a.name)}" placeholder="الاسم">${k=='emps'?`<input data-p="${k}:${i}:pw" value="${esc(a.pw)}" placeholder="كلمة المرور">`:''}</div><div class="row"><input data-p="${k}:${i}:phone" value="${esc(a.phone)}" placeholder="الهاتف"><input data-p="${k}:${i}:note" value="${esc(a.note)}" placeholder="ملاحظات"></div><button class="d" data-delp="${k}:${i}">حذف الحساب</button></div>`).join('')}
+function dashV(){const f=db.log.filter(l=>!l.ok).length;return`<div class="grid"><div class="card"><div class="num">${db.emps.length}</div>موظف</div><div class="card"><div class="num">${db.clients.length}</div>عميل</div><div class="card"><div class="num">${db.log.filter(l=>l.ok).length}</div>دخول ناجح</div><div class="card"><div class="num no">${f}</div>محاولة فاشلة</div></div><h3 style="margin-top:10px">آخر من دخل</h3>`+logV(8)}
+function logV(n){return`<div class="card sc">${db.log.slice(0,n||300).map(l=>`<div class="row" style="border-bottom:1px solid var(--ln);padding:5px 0"><span>${esc(l.u)}</span><span class="tag">${RN[l.role]}</span><span class="${l.ok?'ok':'no'}">${l.ok?'✔ دخل':'✖ فشل'}</span><small>${esc(l.t)}</small></div>`).join('')||'<small>لا يوجد</small>'}</div>`+(n?'':'<button class="d" data-act="clr">مسح السجل</button>')}
+function setV(){return`<div class="card"><h3>تغيير كلمات المرور</h3><small>كلمة مرورك</small><input id="s1" value="${esc(db.ownerPw)}"><small>كلمة مرور المشرف</small><input id="s2" value="${esc(db.supPw)}"><button data-act="pw">حفظ</button></div>`}
+function meV(){const x=(sess.role=='emp'?db.emps:db.clients).find(a=>a.code==sess.code)||{};return`<div class="card"><h3>${esc(x.name)}</h3><span class="tag">${esc(x.code)}</span><p>📞 ${esc(x.phone)||'-'}</p><p>📝 ${esc(x.note)||'-'}</p><small>بياناتك أنت فقط من يراها وإدارة الشركة.</small></div>`}
+
+function portal(){document.body.dataset.t=sess.role;if(!tab)tab=TABS[sess.role][0][0];
+ const T=tab,r=sess.role;let c='';
+ if(T=='dash')c=dashV();else if(T=='news')c=listV('news');else if(T=='tasks')c=listV('tasks');else if(T=='cnews'||T=='upd')c=listV('cnews');
+ else if(T=='emps')c=peopleV('emps');else if(T=='clients')c=peopleV('clients');else if(T=='ideas')c=ideasV();else if(T=='log')c=logV();else if(T=='set')c=setV();else if(T=='me')c=meV();
+ return`<div class="top"><div><div class="logo" style="font-size:22px">DARK STORM</div><small>${RN[r]} – ${esc(sess.name)}</small></div><button class="g" data-act="out">خروج</button></div>
+ <div class="nav">${TABS[r].map(t=>`<button class="${t[0]==T?'on':''}" data-tab="${t[0]}">${t[1]}</button>`).join('')}</div>${c}`}
+
+function render(){const a=$('#app');if(sess){a.innerHTML=portal()}else if(page=='login'){a.innerHTML=loginV()}else{document.body.dataset.t='';a.innerHTML=home()}}
+
+document.addEventListener('click',e=>{const t=e.target.closest('[data-go],[data-tab],[data-act],[data-add],[data-del],[data-addp],[data-delp]');if(!t)return;const d=t.dataset;
+ if(d.go){if(d.go=='home')page='home';else{page='login';role=d.go}render()}
+ else if(d.tab){tab=d.tab;render()}
+ else if(d.add){const k=d.add,ti=$('#ft').value.trim();if(!ti)return;const o={t:ti,b:$('#fb').value,d:new Date().toLocaleDateString('ar-EG')};if(k=='ideas')o.k=$('#fk').value;db[k].unshift(o);save();render()}
+ else if(d.del){const[k,i]=d.del.split(':');if(confirm('حذف؟')){db[k].splice(+i,1);save();render()}}
+ else if(d.addp){const k=d.addp,p=k=='emps'?'E':'C',n=db[k].length+1;db[k].push({code:p+pad(n),name:(k=='emps'?'موظف ':'عميل ')+n,pw:rnd(3)+'-'+rnd(4),phone:'',note:''});save();render()}
+ else if(d.delp){const[k,i]=d.delp.split(':');if(confirm('حذف الحساب؟')){db[k].splice(+i,1);save();render()}}
+ else if(d.act=='login')doLogin();
+ else if(d.act=='out'){sess=null;try{sessionStorage.removeItem('s')}catch(e){}page='home';render()}
+ else if(d.act=='clr'){db.log=[];save();render()}
+ else if(d.act=='pw'){db.ownerPw=$('#s1').value||db.ownerPw;db.supPw=$('#s2').value||db.supPw;save();alert('تم الحفظ ✔')}
+ else if(d.act=='exp'){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(db,null,1)],{type:'application/json'}));a.download='darkstorm-backup.json';a.click()}
+});
+document.addEventListener('change',e=>{const p=e.target.dataset.p;if(!p)return;const[k,i,f]=p.split(':');db[k][+i][f]=e.target.value;save()});
+document.addEventListener('keydown',e=>{if(e.key=='Enter'&&($('#p')||$('#u')))doLogin()});
+render();
+</script>
+</body>
+</html>
