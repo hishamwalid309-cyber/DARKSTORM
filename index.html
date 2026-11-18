@@ -81,7 +81,7 @@ function loginV(){document.body.dataset.t=role;
  <button class="g" style="width:100%;margin-top:6px" data-go="home">رجوع</button></div>`}
 
 function doLogin(){const u=($('#u')?.value||'').trim().toLowerCase(),p=$('#p')?.value||'';let ok=null;
- if(role=='admin'&&['هشام وليد','hisham walid'].includes(u)&&p==db.ownerPw)ok={role,name:'هشام وليد'};
+ if(role=='admin'&&p==db.ownerPw&&(['هشام وليد','hisham walid'].includes(u)||['اياد الشربيني','إياد الشربيني','iyad elsherbiny','iyad el sherbiny','eyad elsherbiny','iyad alsherbiny'].includes(u)))ok={role,name:['هشام وليد','hisham walid'].includes(u)?'هشام وليد':'إياد الشربيني'};
  else if(role=='sup'&&p==db.supPw)ok={role,name:'المشرف العام'};
  else if(role=='client'){const x=u&&db.clients.find(a=>a.code.toLowerCase()==u||a.name.toLowerCase()==u);if(x)ok={role,name:x.name,code:x.code}}
  else if(role=='emp'){const x=db.emps.find(a=>(a.code.toLowerCase()==u||a.name.toLowerCase()==u)&&a.pw==p);if(x)ok={role,name:x.name,code:x.code}}
