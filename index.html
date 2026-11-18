@@ -8,14 +8,14 @@
 :root{--a:#8b5cf6;--b:#06b6d4;--bg:#07060f;--card:#12101f;--tx:#eceaff;--mu:#8d8aa8;--ln:#26223d}
 *{box-sizing:border-box;margin:0;font-family:Cairo,Tahoma,Arial,sans-serif}
 body{background:radial-gradient(circle at 80% -10%,color-mix(in srgb,var(--a) 28%,transparent),transparent 50%),var(--bg);color:var(--tx);min-height:100vh;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
-body[data-t=client]{--a:#06b6d4;--b:#22d3ee}
-body[data-t=emp]{--a:#22c55e;--b:#a3e635}
-body[data-t=sup]{--a:#f59e0b;--b:#fb7185}
-body[data-t=admin]{--a:#e11d48;--b:#8b5cf6}
+body[data-t=client]{--a:#00e5ff;--b:#2979ff;--bg:#02111f;--card:#0a2338;--ln:#0e4a73;--r:26px}
+body[data-t=emp]{--a:#39ff14;--b:#00ffa3;--bg:#000;--card:#06140a;--ln:#145c26;--r:3px}
+body[data-t=sup]{--a:#ffc400;--b:#ff6d00;--bg:#120a00;--card:#241500;--ln:#6b4500;--r:10px}
+body[data-t=admin]{--a:#ff1744;--b:#d500f9;--bg:#0d0010;--card:#1c0524;--ln:#5c0f5e;--r:16px}
 .w{max-width:960px;margin:auto;padding:14px}
 .logo{font-size:30px;font-weight:900;letter-spacing:2px;background:linear-gradient(90deg,var(--a),var(--b));-webkit-background-clip:text;color:transparent;text-shadow:0 0 30px var(--a)}
 .hero{text-align:center;padding:34px 10px 18px}.hero p{color:var(--mu);margin-top:6px}
-.card{background:var(--card);border:1px solid var(--ln);border-radius:16px;padding:14px;margin:10px 0;box-shadow:0 0 24px color-mix(in srgb,var(--a) 10%,transparent)}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:var(--r);padding:14px;margin:10px 0;box-shadow:0 0 24px color-mix(in srgb,var(--a) 10%,transparent)}
 .card h3{color:var(--a);margin-bottom:6px}.card small{color:var(--mu)}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 @media(min-width:700px){.grid.g4{grid-template-columns:repeat(4,1fr)}}
@@ -35,16 +35,29 @@ input:focus,textarea:focus{outline:0;border-color:var(--a)}
 .ok{color:#4ade80}.no{color:#f87171}
 .num{font-size:30px;font-weight:900;color:var(--a)}
 .sc{overflow-x:auto}
+@keyframes glow{0%,100%{text-shadow:0 0 20px var(--a)}50%{text-shadow:0 0 45px var(--b),0 0 80px var(--a)}}
+.logo{animation:glow 3s infinite}.hero .logo{font-size:50px}
+.pb{background-size:200% 200%;border:1px solid rgba(255,255,255,.25);box-shadow:0 0 22px rgba(255,255,255,.12)}
+body[data-t=client] .nav button{border-radius:30px}
+body[data-t=emp] .card{border-left:4px solid var(--a)}
+body[data-t=emp] .nav{position:fixed;bottom:0;top:auto;left:0;right:0;padding:8px 8px calc(8px + env(safe-area-inset-bottom));border-top:2px solid var(--a)}
+body[data-t=emp] .w{padding-bottom:90px}
+body[data-t=sup] h3,body[data-t=sup] .logo{font-family:Georgia,serif}
+body[data-t=sup] .card{border-top:3px solid var(--a)}
+body[data-t=admin] .card{border:1px solid var(--a);box-shadow:0 0 22px color-mix(in srgb,var(--a) 25%,transparent)}
+body[data-t=admin] .top{background:linear-gradient(90deg,var(--a),var(--b));padding:10px 14px;border-radius:var(--r)}
+body[data-t=admin] .top *{color:#fff;-webkit-text-fill-color:#fff;animation:none}
+select{color-scheme:dark}
 </style>
 </head>
 <body>
 <div class="w" id="app"></div>
 <script>
-const KEY='ds_db_v1';
+const KEY='ds_db_v2';
 const rnd=n=>{const c='abcdefghjkmnpqrstuvwxyz23456789';let s='';for(let i=0;i<n;i++)s+=c[Math.random()*c.length|0];return s};
 const pad=n=>String(n).padStart(2,'0');
 function init(){
- const mk=(p,l)=>Array.from({length:30},(_,i)=>({code:p+pad(i+1),name:l+' '+(i+1),pw:rnd(3)+'-'+rnd(4),phone:'',note:''}));
+ const mk=(p,l)=>Array.from({length:30},(_,i)=>({code:p+pad(i+1),name:l+' '+(i+1),pw:'ds'+(100+i+1),phone:'',note:''}));
  return{ownerPw:'h44',supPw:'h303',emps:mk('E','موظف'),clients:mk('C','عميل'),
  news:[{t:'مرحباً بكم في Dark Storm',b:'منصة واحدة تجمع العملاء والموظفين والإدارة.',d:new Date().toLocaleDateString('ar-EG')}],
  tasks:[{t:'مهمة الأسبوع',b:'اكتب هنا الشغل المطلوب من الموظفين.',d:new Date().toLocaleDateString('ar-EG')}],
@@ -54,6 +67,7 @@ let db;try{db=JSON.parse(localStorage.getItem(KEY))||init()}catch(e){db=init()}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){}};save();
 let sess=null;try{sess=JSON.parse(sessionStorage.getItem('s')||'null')}catch(e){}
 let page='home',role='client',tab='';
+const nz=s=>String(s||'').toLowerCase().replace(/[\u064B-\u0652\u0640]/g,'').replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي').replace(/[٠-٩]/g,d=>d.charCodeAt(0)-1632).replace(/\s+/g,' ').trim();
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const $=s=>document.querySelector(s);
 const now=()=>new Date().toLocaleString('ar-EG');
@@ -62,14 +76,14 @@ const RN={client:'العملاء',emp:'الموظفين',sup:'المشرف ال�
 let AC;function click(){try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain();o.type='square';o.frequency.setValueAtTime(1400,AC.currentTime);o.frequency.exponentialRampToValueAtTime(300,AC.currentTime+.07);g.gain.setValueAtTime(.9,AC.currentTime);g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+.09);o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+.1)}catch(e){}}
 document.addEventListener('pointerdown',e=>{if(e.target.closest('button,input,textarea,select,a'))click()});
 
-const newsCards=(L,del)=>L.length?L.map((n,i)=>`<div class="card"><h3>${esc(n.t)}</h3><p>${esc(n.b)}</p><small>${esc(n.d)}</small>${del?` <button class="d" data-del="${del}:${i}">حذف</button>`:''}</div>`).join(''):'<div class="card"><small>لا يوجد شيء بعد</small></div>';
+const newsCards=(L,del)=>L.length?L.map((n,i)=>`<div class="card"><h3>${esc(n.t)}</h3><p>${esc(n.b)}</p><small>${esc(n.d)}</small>${del?` <button data-edit="${del}:${i}">تعديل</button> <button class="d" data-del="${del}:${i}">حذف</button>`:''}</div>`).join(''):'<div class="card"><small>لا يوجد شيء بعد</small></div>';
 
 function home(){return`<div class="hero"><div class="logo">DARK STORM</div><p>البوابة الرئيسية – الأخبار</p></div>
 <div class="grid g4">
-<button class="pb" style="background:#0891b2" data-go="client"><span>👤</span>العملاء</button>
-<button class="pb" style="background:#16a34a" data-go="emp"><span>🛠️</span>الموظفين</button>
-<button class="pb" style="background:#d97706" data-go="sup"><span>👁️</span>المشرف العام</button>
-<button class="pb" style="background:#be123c" data-go="admin"><span>👑</span>الإدارة</button></div>
+<button class="pb" style="background:linear-gradient(135deg,#00e5ff,#2979ff)" data-go="client"><span>👤</span>العملاء</button>
+<button class="pb" style="background:linear-gradient(135deg,#39ff14,#009e5c)" data-go="emp"><span>🛠️</span>الموظفين</button>
+<button class="pb" style="background:linear-gradient(135deg,#ffc400,#ff6d00)" data-go="sup"><span>👁️</span>المشرف العام</button>
+<button class="pb" style="background:linear-gradient(135deg,#ff1744,#d500f9)" data-go="admin"><span>👑</span>الإدارة</button></div>
 <h2 style="margin:18px 0 4px">📰 آخر الأخبار</h2>${newsCards(db.news)}`}
 
 function loginV(){document.body.dataset.t=role;
@@ -80,13 +94,13 @@ function loginV(){document.body.dataset.t=role;
  <button style="width:100%;margin-top:6px" data-act="login">دخول</button>
  <button class="g" style="width:100%;margin-top:6px" data-go="home">رجوع</button></div>`}
 
-function doLogin(){const u=($('#u')?.value||'').trim().toLowerCase(),p=$('#p')?.value||'';let ok=null;
+function doLogin(){const u=nz($('#u')?.value),p=($('#p')?.value||'').trim();let ok=null,msg='بيانات الدخول غير صحيحة';
  if(role=='admin'&&p==db.ownerPw&&(['هشام وليد','hisham walid'].includes(u)||['اياد الشربيني','إياد الشربيني','iyad elsherbiny','iyad el sherbiny','eyad elsherbiny','iyad alsherbiny'].includes(u)))ok={role,name:['هشام وليد','hisham walid'].includes(u)?'هشام وليد':'إياد الشربيني'};
  else if(role=='sup'&&p==db.supPw)ok={role,name:'المشرف العام'};
- else if(role=='client'){const x=u&&db.clients.find(a=>a.code.toLowerCase()==u||a.name.toLowerCase()==u);if(x)ok={role,name:x.name,code:x.code}}
- else if(role=='emp'){const x=db.emps.find(a=>(a.code.toLowerCase()==u||a.name.toLowerCase()==u)&&a.pw==p);if(x)ok={role,name:x.name,code:x.code}}
+ else if(role=='client'){const x=u&&db.clients.find(a=>nz(a.code)==u||nz(a.name)==u);if(!x)msg='الاسم غير موجود';else if(x.off)msg='الحساب موقوف';else ok={role,name:x.name,code:x.code}}
+ else if(role=='emp'){const x=u&&db.emps.find(a=>nz(a.code)==u||nz(a.name)==u);if(!x)msg='الاسم غير موجود';else if(x.off)msg='الحساب موقوف';else if(String(x.pw).trim().toLowerCase()!=p.toLowerCase())msg='كلمة المرور غلط';else ok={role,name:x.name,code:x.code}}
  db.log.unshift({t:now(),role,u:ok?ok.name:(u||'-'),ok:!!ok});db.log=db.log.slice(0,300);save();
- if(!ok){$('#er').textContent='بيانات الدخول غير صحيحة';return}
+ if(!ok){$('#er').textContent=msg;return}
  sess=ok;try{sessionStorage.setItem('s',JSON.stringify(ok))}catch(e){}tab={admin:'dash',sup:'ideas',emp:'tasks',client:'upd'}[role];render()}
 
 const TABS={admin:[['dash','📊 لوحة'],['news','📰 الأخبار'],['tasks','📋 أخبار الموظفين'],['cnews','🔔 جديد العملاء'],['emps','🛠️ الموظفين'],['clients','👤 العملاء'],['ideas','💡 المشرف'],['log','🕵️ السجل'],['set','⚙️ إعدادات']],
@@ -95,9 +109,9 @@ const TABS={admin:[['dash','📊 لوحة'],['news','📰 الأخبار'],['tas
 function addForm(k){return`<div class="card"><input id="ft" placeholder="العنوان"><textarea id="fb" rows="3" placeholder="التفاصيل"></textarea>
 ${k=='ideas'?'<select id="fk"><option>فكرة</option><option>استنتاج</option><option>مشروع</option></select>':''}
 <button data-add="${k}">➕ إضافة</button></div>`}
-function ideasV(){const own=sess.role=='admin';return addForm('ideas')+(db.ideas.length?db.ideas.map((n,i)=>`<div class="card"><span class="tag">${esc(n.k)}</span><h3>${esc(n.t)}</h3><p>${esc(n.b)}</p><small>${esc(n.d)}</small>${own?` <button class="d" data-del="ideas:${i}">حذف</button>`:''}</div>`).join(''):'<div class="card"><small>لا يوجد شيء بعد</small></div>')}
+function ideasV(){const own=sess.role=='admin';return addForm('ideas')+(db.ideas.length?db.ideas.map((n,i)=>`<div class="card"><span class="tag">${esc(n.k)}</span><h3>${esc(n.t)}</h3><p>${esc(n.b)}</p><small>${esc(n.d)}</small>${own?` <button data-edit="ideas:${i}">تعديل</button> <button class="d" data-del="ideas:${i}">حذف</button>`:''}</div>`).join(''):'<div class="card"><small>لا يوجد شيء بعد</small></div>')}
 function listV(k){return(sess.role=='admin'||(sess.role=='sup'&&k=='news')?addForm(k):'')+newsCards(db[k],sess.role=='admin'?k:'')}
-function peopleV(k){return`<div class="card"><small>كل التعديلات تُحفظ تلقائياً. ${k=='clients'?'العملاء يدخلون بالاسم أو الكود فقط بدون كلمة مرور.':'فقط أنت تشوف كلمات المرور.'}</small></div><div class="row"><button data-addp="${k}">➕ حساب جديد</button></div>`+db[k].map((a,i)=>`<div class="card"><span class="tag">${esc(a.code)}</span><div class="row"><input data-p="${k}:${i}:name" value="${esc(a.name)}" placeholder="الاسم">${k=='emps'?`<input data-p="${k}:${i}:pw" value="${esc(a.pw)}" placeholder="كلمة المرور">`:''}</div><div class="row"><input data-p="${k}:${i}:phone" value="${esc(a.phone)}" placeholder="الهاتف"><input data-p="${k}:${i}:note" value="${esc(a.note)}" placeholder="ملاحظات"></div><button class="d" data-delp="${k}:${i}">حذف الحساب</button></div>`).join('')}
+function peopleV(k){return`<div class="card"><small>كل التعديلات تُحفظ تلقائياً. ${k=='clients'?'العملاء يدخلون بالاسم أو الكود فقط بدون كلمة مرور.':'فقط أنت تشوف كلمات المرور.'}</small></div><div class="row"><button data-addp="${k}">➕ حساب جديد</button></div>`+db[k].map((a,i)=>`<div class="card"><span class="tag">${esc(a.code)}</span><div class="row"><input data-p="${k}:${i}:name" value="${esc(a.name)}" placeholder="الاسم">${k=='emps'?`<input data-p="${k}:${i}:pw" value="${esc(a.pw)}" placeholder="كلمة المرور">`:''}</div><div class="row"><input data-p="${k}:${i}:phone" value="${esc(a.phone)}" placeholder="الهاتف"><input data-p="${k}:${i}:note" value="${esc(a.note)}" placeholder="ملاحظات"></div><select data-p="${k}:${i}:off"><option value="">✅ مفعّل</option><option value="1"${a.off?' selected':''}>⛔ موقوف</option></select><button class="d" data-delp="${k}:${i}">حذف الحساب</button></div>`).join('')}
 function dashV(){const f=db.log.filter(l=>!l.ok).length;return`<div class="grid"><div class="card"><div class="num">${db.emps.length}</div>موظف</div><div class="card"><div class="num">${db.clients.length}</div>عميل</div><div class="card"><div class="num">${db.log.filter(l=>l.ok).length}</div>دخول ناجح</div><div class="card"><div class="num no">${f}</div>محاولة فاشلة</div></div><h3 style="margin-top:10px">آخر من دخل</h3>`+logV(8)}
 function logV(n){return`<div class="card sc">${db.log.slice(0,n||300).map(l=>`<div class="row" style="border-bottom:1px solid var(--ln);padding:5px 0"><span>${esc(l.u)}</span><span class="tag">${RN[l.role]}</span><span class="${l.ok?'ok':'no'}">${l.ok?'✔ دخل':'✖ فشل'}</span><small>${esc(l.t)}</small></div>`).join('')||'<small>لا يوجد</small>'}</div>`+(n?'':'<button class="d" data-act="clr">مسح السجل</button>')}
 function setV(){return`<div class="card"><h3>تغيير كلمات المرور</h3><small>كلمة مرورك</small><input id="s1" value="${esc(db.ownerPw)}"><small>كلمة مرور المشرف</small><input id="s2" value="${esc(db.supPw)}"><button data-act="pw">حفظ</button></div>`}
@@ -112,12 +126,13 @@ function portal(){document.body.dataset.t=sess.role;if(!tab)tab=TABS[sess.role][
 
 function render(){const a=$('#app');if(sess){a.innerHTML=portal()}else if(page=='login'){a.innerHTML=loginV()}else{document.body.dataset.t='';a.innerHTML=home()}}
 
-document.addEventListener('click',e=>{const t=e.target.closest('[data-go],[data-tab],[data-act],[data-add],[data-del],[data-addp],[data-delp]');if(!t)return;const d=t.dataset;
+document.addEventListener('click',e=>{const t=e.target.closest('[data-go],[data-tab],[data-act],[data-add],[data-del],[data-addp],[data-delp],[data-edit]');if(!t)return;const d=t.dataset;
  if(d.go){if(d.go=='home')page='home';else{page='login';role=d.go}render()}
  else if(d.tab){tab=d.tab;render()}
  else if(d.add){const k=d.add,ti=$('#ft').value.trim();if(!ti)return;const o={t:ti,b:$('#fb').value,d:new Date().toLocaleDateString('ar-EG')};if(k=='ideas')o.k=$('#fk').value;db[k].unshift(o);save();render()}
  else if(d.del){const[k,i]=d.del.split(':');if(confirm('حذف؟')){db[k].splice(+i,1);save();render()}}
- else if(d.addp){const k=d.addp,p=k=='emps'?'E':'C',n=db[k].length+1;db[k].push({code:p+pad(n),name:(k=='emps'?'موظف ':'عميل ')+n,pw:rnd(3)+'-'+rnd(4),phone:'',note:''});save();render()}
+ else if(d.edit){const[k,i]=d.edit.split(':'),o=db[k][+i],t=prompt('العنوان',o.t);if(t===null)return;const b=prompt('التفاصيل',o.b);if(b===null)return;o.t=t;o.b=b;save();render()}
+ else if(d.addp){const k=d.addp,p=k=='emps'?'E':'C',n=db[k].length+1;db[k].push({code:p+pad(n),name:(k=='emps'?'موظف ':'عميل ')+n,pw:'ds'+(100+n),phone:'',note:''});save();render()}
  else if(d.delp){const[k,i]=d.delp.split(':');if(confirm('حذف الحساب؟')){db[k].splice(+i,1);save();render()}}
  else if(d.act=='login')doLogin();
  else if(d.act=='out'){sess=null;try{sessionStorage.removeItem('s')}catch(e){}page='home';render()}
