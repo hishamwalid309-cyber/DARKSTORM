@@ -1,0 +1,2866 @@
+<!DOCTYPE html>
+<!--
+  ============================================================================
+  DEC — Dark Storm | Premium Business Platform (ملف واحد)
+  نظام الإدارة الداخلي DEC Management System
+  ----------------------------------------------------------------------------
+  التشغيل:
+    1) افتح الملف مباشرة في المتصفح — يعمل فورًا في الوضع المحلي (localStorage).
+    2) للمزامنة بين الأجهزة: نفّذ supabase/schema.sql في مشروع Supabase
+       ثم املأ DEC_CONFIG بالأسفل (SUPABASE_URL + SUPABASE_ANON_KEY).
+  الحسابات الافتراضية موضّحة في docs/SETUP-AR.md — يمكن تعديلها من داخل النظام.
+  ملاحظة أمنية: الدخول بالرمز هو تحكم واجهة (UI) وليس مصادقة حقيقية؛
+  للحماية الفعلية استخدم Supabase Auth + RLS قبل الاستخدام التجاري.
+  ============================================================================
+-->
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#090B0A">
+<meta name="description" content="DEC — شركة تقنية متخصصة في الخدمات الرقمية والأنظمة الإدارية. فريق Dark Storm.">
+<title>DEC — Dark Storm | حلول رقمية وأنظمة إدارة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================ 1. الأساسيات ============================ */
+:root{
+  --bg:#090B0A; --bg-soft:#0D100E; --card:#111512; --card-2:#151B17;
+  --green:#00C878; --green-dark:#087A50; --green-dim:rgba(0,200,120,.12);
+  --text:#F2F5F3; --muted:#929B95; --line:#252C28;
+  --warn:#E5A93D; --danger:#E45B5B; --info:#6FA8C7;
+  --r-sm:10px; --r:14px; --r-lg:18px; --r-xl:26px;
+  --shadow:0 26px 60px -40px rgba(0,0,0,.9);
+  --side:272px; --top:68px;
+  --font-h:'Cairo',system-ui,sans-serif; --font-b:'Tajawal',system-ui,sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-b);font-size:16px;line-height:1.7;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden}
+h1,h2,h3,h4,h5{font-family:var(--font-h);margin:0;line-height:1.28;letter-spacing:-.01em;font-weight:800}
+p{margin:0}
+a{color:inherit;text-decoration:none}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0}
+img,svg{max-width:100%;display:block}
+ul{margin:0;padding:0;list-style:none}
+::selection{background:var(--green);color:#04120C}
+:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:var(--bg-soft)}
+::-webkit-scrollbar-thumb{background:#2B332E;border-radius:20px;border:2px solid var(--bg-soft)}
+::-webkit-scrollbar-thumb:hover{background:#3A453E}
+
+/* ============================ 2. أدوات عامة ============================ */
+.wrap{width:100%;max-width:1240px;margin-inline:auto;padding-inline:22px}
+.row{display:flex;align-items:center;gap:10px}
+.between{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.col{display:flex;flex-direction:column}
+.grow{flex:1;min-width:0}
+.mt-0{margin-top:0}.mt-1{margin-top:8px}.mt-2{margin-top:16px}.mt-3{margin-top:24px}.mt-4{margin-top:34px}
+.mb-1{margin-bottom:8px}.mb-2{margin-bottom:16px}.mb-3{margin-bottom:24px}
+.muted{color:var(--muted)}
+.small{font-size:13.5px}
+.xs{font-size:12px}
+.center{text-align:center}
+.nowrap{white-space:nowrap}
+.hide{display:none!important}
+.green{color:var(--green)}
+.danger{color:var(--danger)}
+.warnc{color:var(--warn)}
+.ltr{direction:ltr;unicode-bidi:embed}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;letter-spacing:.02em}
+.divider{height:1px;background:var(--line);border:0;margin:0}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+svg.ico-svg{width:16px;height:16px;flex:0 0 auto;display:inline-block;vertical-align:-.15em}
+
+/* ============================ 3. الهوية / الشعارات ============================ */
+.logo{display:flex;align-items:center;gap:12px;min-width:0}
+.logo svg{flex:0 0 auto}
+.logo-txt{display:flex;flex-direction:column;line-height:1.15;min-width:0}
+.logo-txt b{font-family:var(--font-h);font-size:19px;font-weight:900;letter-spacing:.16em}
+.logo-txt span{font-size:10.5px;color:var(--muted);letter-spacing:.34em;text-transform:uppercase}
+.logo-storm .logo-txt b{font-size:16px;letter-spacing:.08em;font-weight:700}
+.logo-storm .logo-txt span{letter-spacing:.26em;font-size:9.5px}
+
+/* ============================ 4. الأزرار ============================ */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:11px 20px;border-radius:11px;
+  font-family:var(--font-h);font-weight:700;font-size:14.5px;border:1px solid transparent;transition:.22s ease;
+  white-space:nowrap;user-select:none;min-height:44px}
+.btn svg{width:17px;height:17px;stroke-width:1.8}
+.btn-primary{background:var(--green);color:#04120C;border-color:var(--green);box-shadow:0 10px 26px -16px rgba(0,200,120,.9)}
+.btn-primary:hover{background:#12D98A;border-color:#12D98A;transform:translateY(-1px)}
+.btn-primary:active{transform:translateY(0)}
+.btn-ghost{background:rgba(255,255,255,.02);border-color:var(--line);color:var(--text)}
+.btn-ghost:hover{border-color:#3A453E;background:rgba(255,255,255,.045)}
+.btn-soft{background:var(--green-dim);border-color:rgba(0,200,120,.28);color:var(--green)}
+.btn-soft:hover{background:rgba(0,200,120,.2)}
+.btn-danger{background:rgba(228,91,91,.12);border-color:rgba(228,91,91,.35);color:#F08B8B}
+.btn-danger:hover{background:rgba(228,91,91,.2)}
+.btn-sm{padding:7px 13px;font-size:13px;min-height:36px;border-radius:9px}
+.btn-sm svg{width:15px;height:15px}
+.btn-icon{width:38px;height:38px;min-height:38px;padding:0;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.02)}
+.btn-icon:hover{border-color:#3A453E;background:rgba(255,255,255,.05)}
+.btn-icon svg{width:18px;height:18px}
+.btn:disabled,.btn[disabled]{opacity:.45;cursor:not-allowed;transform:none!important}
+.btn-block{width:100%}
+.link{color:var(--green);font-weight:500;border-bottom:1px solid rgba(0,200,120,.25)}
+.link:hover{border-bottom-color:var(--green)}
+
+/* ============================ 5. الهيدر العام ============================ */
+.site-header{position:sticky;top:0;z-index:60;background:rgba(9,11,10,.78);backdrop-filter:blur(20px) saturate(140%);
+  -webkit-backdrop-filter:blur(20px) saturate(140%);border-bottom:1px solid var(--line)}
+.site-header .wrap{display:flex;align-items:center;justify-content:space-between;height:74px;gap:20px}
+.nav{display:flex;align-items:center;gap:4px}
+.nav a{padding:9px 13px;border-radius:9px;font-size:14.5px;color:var(--muted);transition:.2s;position:relative;font-weight:500}
+.nav a:hover{color:var(--text);background:rgba(255,255,255,.035)}
+.nav a.on{color:var(--text)}
+.nav a.on::after{content:"";position:absolute;inset-inline:13px;bottom:2px;height:2px;background:var(--green);border-radius:2px}
+.hdr-actions{display:flex;align-items:center;gap:10px}
+.burger{display:none;width:42px;height:42px;border:1px solid var(--line);border-radius:10px;align-items:center;justify-content:center}
+.burger svg{width:20px;height:20px}
+.mnav{display:none}
+@media(max-width:1000px){
+  .nav{display:none}
+  .burger{display:flex}
+  .mnav{display:block;position:fixed;inset:74px 0 auto;background:#0A0D0B;border-bottom:1px solid var(--line);
+    padding:14px 20px 22px;z-index:59;transform:translateY(-12px);opacity:0;pointer-events:none;transition:.25s}
+  .mnav.open{transform:none;opacity:1;pointer-events:auto}
+  .mnav a{display:block;padding:13px 10px;border-bottom:1px solid rgba(37,44,40,.6);font-size:15.5px;color:var(--muted)}
+  .mnav a:last-of-type{border:0}
+  .mnav a.on{color:var(--green)}
+  .mnav .btn{margin-top:12px;width:100%}
+}
+
+/* ============================ 6. الأقسام العامة ============================ */
+.section{padding:88px 0;position:relative}
+.section.alt{background:var(--bg-soft);border-block:1px solid var(--line)}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-family:var(--font-h);font-size:12px;font-weight:700;
+  letter-spacing:.18em;color:var(--green);text-transform:uppercase;margin-bottom:14px}
+.eyebrow::before{content:"";width:22px;height:1px;background:var(--green)}
+.h2{font-size:clamp(26px,3.4vw,40px);letter-spacing:-.02em}
+.h3{font-size:clamp(19px,2vw,23px)}
+.lead{color:var(--muted);font-size:16.5px;max-width:62ch;line-height:1.85}
+.section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:30px;margin-bottom:42px;flex-wrap:wrap}
+.section-head .lead{margin-top:12px}
+.sec-num{font-family:var(--font-h);font-size:12px;color:#3A453E;letter-spacing:.2em;font-weight:700}
+
+/* hero */
+.hero{position:relative;min-height:calc(100svh - 74px);display:flex;align-items:center;overflow:hidden;
+  padding:70px 0 60px;border-bottom:1px solid var(--line)}
+.hero-bg{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.hero-bg .glow{position:absolute;border-radius:50%;filter:blur(90px);opacity:.5}
+.hero-bg .g1{width:520px;height:520px;background:radial-gradient(circle,rgba(0,200,120,.22),transparent 68%);
+  inset-inline-end:-140px;top:-110px}
+.hero-bg .g2{width:420px;height:420px;background:radial-gradient(circle,rgba(8,122,80,.28),transparent 70%);
+  inset-inline-start:-120px;bottom:-140px;opacity:.6}
+.hero-bg .grid-lines{position:absolute;inset:0;opacity:.5;
+  background-image:linear-gradient(to right,rgba(37,44,40,.55) 1px,transparent 1px),
+                   linear-gradient(to bottom,rgba(37,44,40,.55) 1px,transparent 1px);
+  background-size:78px 78px;
+  mask-image:radial-gradient(ellipse 80% 70% at 50% 40%,#000 20%,transparent 78%);
+  -webkit-mask-image:radial-gradient(ellipse 80% 70% at 50% 40%,#000 20%,transparent 78%)}
+.hero-inner{position:relative;display:grid;grid-template-columns:1.15fr .85fr;gap:56px;align-items:center;width:100%}
+.hero h1{font-size:clamp(34px,5.2vw,64px);line-height:1.16;letter-spacing:-.03em;margin-bottom:20px}
+.hero h1 em{font-style:normal;color:var(--green);position:relative}
+.hero .lead{font-size:17px;max-width:50ch}
+.hero-actions{display:flex;gap:12px;margin-top:32px;flex-wrap:wrap}
+.hero-meta{display:flex;gap:34px;margin-top:46px;padding-top:26px;border-top:1px solid var(--line);flex-wrap:wrap}
+.hero-meta div b{display:block;font-family:var(--font-h);font-size:23px;font-weight:800;letter-spacing:-.01em}
+.hero-meta div span{font-size:12.5px;color:var(--muted)}
+.hero-visual{position:relative;aspect-ratio:1/1;display:grid;place-items:center}
+.orbit{position:absolute;inset:0;border:1px solid rgba(37,44,40,.9);border-radius:50%}
+.orbit:nth-child(2){inset:12%;border-style:dashed;border-color:rgba(0,200,120,.16);animation:spin 46s linear infinite}
+.orbit:nth-child(3){inset:26%;border-color:rgba(37,44,40,.8)}
+.hero-emblem{position:relative;filter:drop-shadow(0 24px 60px rgba(0,200,120,.18))}
+.hero-chip{position:absolute;display:flex;align-items:center;gap:8px;padding:8px 13px;border-radius:999px;
+  background:rgba(17,21,18,.92);border:1px solid var(--line);font-size:12px;color:var(--muted);
+  backdrop-filter:blur(8px);box-shadow:0 14px 30px -22px #000}
+.hero-chip i{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px rgba(0,200,120,.14)}
+.hc-1{top:8%;inset-inline-start:-2%}
+.hc-2{bottom:12%;inset-inline-end:-4%}
+.hc-3{bottom:34%;inset-inline-start:-8%}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes float{50%{transform:translateY(-9px)}}
+@media(max-width:940px){
+  .hero-inner{grid-template-columns:1fr;gap:34px}
+  .hero-visual{max-width:380px;margin-inline:auto;order:-1;aspect-ratio:1/.92}
+  .hero{min-height:auto;padding-top:44px}
+  .hero-meta{gap:22px;margin-top:32px}
+  .hc-3{display:none}
+}
+
+/* cards / grids */
+.grid{display:grid;gap:18px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:1000px){.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:680px){.g2,.g3,.g4{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);transition:.26s ease;position:relative}
+.card.pad{padding:24px}
+.card.hover:hover{border-color:rgba(0,200,120,.32);transform:translateY(-3px);box-shadow:0 30px 60px -46px rgba(0,200,120,.65)}
+.svc-card{padding:26px 24px;display:flex;flex-direction:column;gap:14px;min-height:100%}
+.svc-ico{width:48px;height:48px;border-radius:13px;display:grid;place-items:center;background:var(--green-dim);
+  border:1px solid rgba(0,200,120,.22);color:var(--green)}
+.svc-ico svg{width:23px;height:23px;stroke-width:1.6}
+.svc-card h3{font-size:18.5px}
+.svc-card p{color:var(--muted);font-size:14.5px;line-height:1.8}
+.svc-feats{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto;padding-top:12px}
+.chip{font-size:11.5px;padding:4px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted);background:rgba(255,255,255,.025)}
+.chip.green{color:var(--green);border-color:rgba(0,200,120,.25);background:var(--green-dim)}
+.svc-more{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--green);font-weight:600;margin-top:4px}
+.svc-more svg{width:14px;height:14px}
+
+.proj-card{overflow:hidden;display:flex;flex-direction:column}
+.proj-cover{aspect-ratio:16/10;background:linear-gradient(140deg,#121915,#0C110E);position:relative;display:grid;place-items:center;overflow:hidden;border-bottom:1px solid var(--line)}
+.proj-cover img{width:100%;height:100%;object-fit:cover;opacity:.85}
+.proj-cover .ph{opacity:.5}
+.proj-body{padding:18px 20px 20px;display:flex;flex-direction:column;gap:9px;flex:1}
+.proj-body h3{font-size:16.5px}
+.proj-meta{display:flex;align-items:center;gap:12px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.proj-tag{position:absolute;top:12px;inset-inline-start:12px;font-size:11px;padding:4px 9px;border-radius:6px;
+  background:rgba(9,11,10,.86);border:1px solid var(--line);color:var(--text);backdrop-filter:blur(6px)}
+
+.team-card{padding:22px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px}
+.avatar{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;font-family:var(--font-h);font-weight:800;
+  background:linear-gradient(150deg,#1B2A22,#121815);border:1px solid #2C3A32;color:var(--green);font-size:16px;flex:0 0 auto;
+  overflow:hidden;text-transform:uppercase}
+.avatar.lg{width:82px;height:82px;font-size:24px}
+.avatar.sm{width:34px;height:34px;font-size:12px}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.team-card .avatar{width:64px;height:64px;font-size:19px}
+.team-role{font-size:12.5px;color:var(--green);font-weight:600}
+.team-bio{font-size:13px;color:var(--muted);line-height:1.7}
+.team-skills{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-top:2px}
+
+/* stats band */
+.stats-band{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;background:var(--card)}
+.stats-band>div{padding:28px 22px;border-inline-start:1px solid var(--line);text-align:center;transition:.25s}
+.stats-band>div:first-child{border:0}
+.stats-band>div:hover{background:var(--card-2)}
+.stats-band b{display:block;font-family:var(--font-h);font-size:clamp(26px,3.4vw,38px);font-weight:800;letter-spacing:-.02em;color:var(--text)}
+.stats-band b i{font-style:normal;color:var(--green);font-size:.6em;vertical-align:super;margin-inline-start:2px}
+.stats-band span{font-size:13px;color:var(--muted);display:block;margin-top:4px}
+@media(max-width:760px){.stats-band{grid-template-columns:repeat(2,1fr)}.stats-band>div:nth-child(3){border-inline-start:0}.stats-band>div:nth-child(n+3){border-top:1px solid var(--line)}}
+
+.quote{padding:26px;display:flex;flex-direction:column;gap:16px}
+.quote p{font-size:15px;line-height:1.9;color:#DCE3DE}
+.quote .who{display:flex;align-items:center;gap:10px;margin-top:auto}
+.quote .who b{font-size:13.5px;display:block;font-family:var(--font-h)}
+.quote .who span{font-size:11.5px;color:var(--muted)}
+.stars{display:flex;gap:2px;color:var(--green)}
+.stars svg{width:13px;height:13px;fill:currentColor}
+
+/* CTA */
+.cta{position:relative;overflow:hidden;border:1px solid rgba(0,200,120,.2);border-radius:var(--r-xl);
+  background:linear-gradient(150deg,#0F1A14,#0B0F0C 62%);padding:52px 46px;display:flex;align-items:center;justify-content:space-between;gap:30px;flex-wrap:wrap}
+.cta::after{content:"";position:absolute;width:340px;height:340px;border-radius:50%;inset-inline-end:-80px;top:-120px;
+  background:radial-gradient(circle,rgba(0,200,120,.2),transparent 70%);filter:blur(30px);pointer-events:none}
+.cta h2{font-size:clamp(22px,3vw,32px);margin-bottom:8px}
+.cta p{color:var(--muted);font-size:14.5px;max-width:56ch}
+@media(max-width:700px){.cta{padding:32px 24px}}
+
+/* footer */
+.footer{border-top:1px solid var(--line);background:#070908;padding:56px 0 26px;margin-top:0}
+.footer-grid{display:grid;grid-template-columns:1.6fr 1fr 1fr 1.2fr;gap:36px}
+.footer h4{font-size:13px;color:var(--text);margin-bottom:14px;font-family:var(--font-h);letter-spacing:.04em}
+.footer a,.footer li{color:var(--muted);font-size:13.5px;line-height:2.1;transition:.2s}
+.footer a:hover{color:var(--green)}
+.footer-bottom{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+  border-top:1px solid var(--line);margin-top:40px;padding-top:20px;font-size:12px;color:#6B756F}
+.footer-brand p{color:var(--muted);font-size:13.5px;margin-top:16px;max-width:34ch;line-height:1.9}
+.social{display:flex;gap:8px;margin-top:16px}
+.social a{width:34px;height:34px;border:1px solid var(--line);border-radius:9px;display:grid;place-items:center;color:var(--muted)}
+.social a:hover{color:var(--green);border-color:rgba(0,200,120,.35)}
+.social svg{width:15px;height:15px}
+@media(max-width:860px){.footer-grid{grid-template-columns:1fr 1fr;gap:26px}.footer-brand{grid-column:1/-1}}
+
+/* ============================ 7. تسجيل الدخول ============================ */
+.auth-shell{min-height:100vh;display:grid;grid-template-columns:1.05fr .95fr}
+.auth-art{position:relative;overflow:hidden;border-inline-end:1px solid var(--line);display:flex;flex-direction:column;
+  justify-content:space-between;padding:44px;background:
+  radial-gradient(circle at 78% 18%,rgba(0,200,120,.13),transparent 46%),
+  radial-gradient(circle at 12% 88%,rgba(8,122,80,.16),transparent 50%),#0A0D0B}
+.auth-art .lines{position:absolute;inset:0;background-image:linear-gradient(to right,rgba(37,44,40,.4) 1px,transparent 1px),
+  linear-gradient(to bottom,rgba(37,44,40,.4) 1px,transparent 1px);background-size:64px 64px;
+  mask-image:radial-gradient(circle at 60% 40%,#000,transparent 72%);-webkit-mask-image:radial-gradient(circle at 60% 40%,#000,transparent 72%)}
+.auth-art>*{position:relative}
+.auth-quote{max-width:420px}
+.auth-quote h2{font-size:clamp(24px,2.6vw,34px);line-height:1.35;margin-bottom:14px}
+.auth-quote p{color:var(--muted);font-size:14.5px;line-height:1.9}
+.auth-marks{display:flex;gap:10px;margin-top:24px;flex-wrap:wrap}
+.auth-side{display:flex;align-items:center;justify-content:center;padding:40px 24px;background:var(--bg)}
+.auth-card{width:min(430px,100%)}
+.auth-card h1{font-size:26px;margin-bottom:6px}
+.auth-note{font-size:12.5px;color:var(--muted);line-height:1.8}
+.btn-google{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:50px;
+  background:#F2F5F3;color:#0C110E;border-radius:11px;font-family:var(--font-h);font-weight:700;font-size:15px;transition:.2s}
+.btn-google:hover{background:#fff;transform:translateY(-1px)}
+.btn-google svg{width:19px;height:19px}
+.auth-sep{display:flex;align-items:center;gap:12px;color:#5C665F;font-size:11.5px;margin:20px 0}
+.auth-sep::before,.auth-sep::after{content:"";height:1px;background:var(--line);flex:1}
+@media(max-width:900px){.auth-shell{grid-template-columns:1fr}.auth-art{display:none}}
+
+/* ============================ 8. هيكل النظام ============================ */
+.shell{min-height:100vh}
+.side{position:fixed;inset-block:0;inset-inline-start:0;width:var(--side);z-index:70;display:flex;flex-direction:column;
+  background:linear-gradient(180deg,#0C100E,#080B09);border-inline-end:1px solid var(--line);overflow-y:auto;overscroll-behavior:contain}
+.side-brand{padding:20px 18px 16px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:12px}
+.side-storm{display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid rgba(0,200,120,.16);
+  border-radius:8px;background:rgba(0,200,120,.05)}
+.side-storm b{font-family:var(--font-h);font-size:11.5px;letter-spacing:.12em;color:#B9C6BE;font-weight:700}
+.side-storm span{font-size:9.5px;color:var(--green);letter-spacing:.1em;margin-inline-start:auto}
+.side-user{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:11px}
+.side-user .nm{font-family:var(--font-h);font-size:13.5px;font-weight:700;line-height:1.4}
+.side-user .ps{font-size:11px;color:var(--muted);line-height:1.4}
+.side-nav{padding:12px 10px 18px;flex:1}
+.side-group{margin-bottom:14px}
+.side-label{font-size:10px;letter-spacing:.16em;color:#5C665F;padding:8px 12px 6px;font-family:var(--font-h);font-weight:700;text-transform:uppercase}
+.side-link{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:9px;color:#A7B1AB;font-size:13.5px;
+  transition:.18s;position:relative;font-weight:500;width:100%;text-align:start}
+.side-link svg{width:17px;height:17px;stroke-width:1.7;flex:0 0 auto;opacity:.8}
+.side-link:hover{background:rgba(255,255,255,.035);color:var(--text)}
+.side-link.on{background:rgba(0,200,120,.1);color:var(--green);font-weight:600}
+.side-link.on svg{opacity:1}
+.side-link.on::before{content:"";position:absolute;inset-inline-start:-10px;top:9px;bottom:9px;width:2px;background:var(--green);border-radius:2px}
+.side-link .cnt{margin-inline-start:auto;font-size:10.5px;background:rgba(228,91,91,.16);color:#F09090;
+  border-radius:99px;padding:1px 7px;font-weight:700;min-width:20px;text-align:center}
+.side-foot{padding:14px 16px;border-top:1px solid var(--line);margin-top:auto}
+.side-foot .btn{width:100%}
+.main{margin-inline-start:var(--side);min-height:100vh;display:flex;flex-direction:column;min-width:0}
+.topbar{position:sticky;top:0;z-index:50;height:var(--top);display:flex;align-items:center;gap:14px;padding:0 24px;
+  background:rgba(9,11,10,.86);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+.icon-btn{width:36px;height:36px;border-radius:9px;border:1px solid var(--line);display:grid;place-items:center;color:#A7B1AB;transition:.2s;position:relative;flex:0 0 auto}
+.icon-btn:hover{color:var(--text);border-color:#3A453E;background:rgba(255,255,255,.04)}
+.icon-btn svg{width:17px;height:17px}
+.icon-btn .dot{position:absolute;top:6px;inset-inline-end:6px;width:6px;height:6px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 0 2px #0A0D0B}
+.search{position:relative;flex:1;max-width:340px}
+.search svg{position:absolute;inset-inline-start:11px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:#6B756F}
+.search input{width:100%;background:#0C110E;border:1px solid var(--line);border-radius:9px;padding:8px 36px 8px 12px;font-size:13px;min-height:36px}
+.search input:focus{outline:none;border-color:rgba(0,200,120,.4)}
+.topbar-date{font-size:12px;color:var(--muted);white-space:nowrap;display:flex;align-items:center;gap:7px}
+.topbar-date svg{width:14px;height:14px}
+.topbar-user{display:flex;align-items:center;gap:9px;padding:4px 6px 4px 10px;border-radius:9px;border:1px solid transparent;transition:.2s}
+.topbar-user:hover{background:rgba(255,255,255,.04);border-color:var(--line)}
+.topbar-user .nm{font-size:12.5px;font-family:var(--font-h);font-weight:700;line-height:1.3}
+.topbar-user .ps{font-size:10.5px;color:var(--muted);line-height:1.3}
+.page{padding:26px 26px 60px;width:100%;max-width:1460px;margin-inline:auto}
+.page-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:22px}
+.page-head h1{font-size:clamp(21px,2.4vw,27px);margin-bottom:4px}
+.page-head p{color:var(--muted);font-size:13.5px}
+.crumb{font-size:11px;color:#5C665F;margin-bottom:6px;letter-spacing:.06em}
+.side-overlay{display:none}
+.burger-side{display:none}
+@media(max-width:960px){
+  .side{transform:translateX(100%);transition:transform .28s ease;width:284px;box-shadow:-24px 0 60px rgba(0,0,0,.65)}
+  .side.open{transform:none}
+  .main{margin-inline-start:0}
+  .side-overlay.show{display:block;position:fixed;inset:0;background:rgba(4,6,5,.66);z-index:65;backdrop-filter:blur(2px)}
+  .burger-side{display:grid}
+  .topbar{padding:0 14px;gap:9px}
+  .topbar-date{display:none}
+  .topbar-user .txt{display:none}
+  .page{padding:18px 14px 48px}
+}
+
+/* ============================ 9. بطاقات الإحصاء واللوحات ============================ */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:13px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:15px 16px;display:flex;align-items:flex-start;
+  gap:12px;transition:.22s;position:relative;overflow:hidden}
+.kpi:hover{border-color:rgba(0,200,120,.3);background:var(--card-2)}
+.kpi .ico{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;background:var(--green-dim);color:var(--green);flex:0 0 auto}
+.kpi .ico svg{width:17px;height:17px}
+.kpi .ico.warn{background:rgba(229,169,61,.12);color:var(--warn)}
+.kpi .ico.bad{background:rgba(228,91,91,.12);color:#EE8B8B}
+.kpi .ico.plain{background:rgba(255,255,255,.04);color:#A7B1AB}
+.kpi .val{font-family:var(--font-h);font-size:24px;font-weight:800;line-height:1.15;letter-spacing:-.01em}
+.kpi .lbl{font-size:11.5px;color:var(--muted);line-height:1.4;margin-top:1px}
+.kpi .sub{font-size:10.5px;color:#6B756F;margin-top:5px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden}
+.panel-head{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;min-height:56px}
+.panel-title{font-family:var(--font-h);font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
+.panel-title svg{width:16px;height:16px;color:var(--green)}
+.panel-sub{font-size:11.5px;color:var(--muted)}
+.panel-body{padding:18px}
+.panel-body.flush{padding:0}
+.split{display:grid;grid-template-columns:1.55fr 1fr;gap:16px;align-items:start}
+.split-eq{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+@media(max-width:1100px){.split,.split-eq{grid-template-columns:1fr}}
+.stack{display:flex;flex-direction:column;gap:16px}
+
+/* ============================ 10. الجداول ============================ */
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tbl{width:100%;border-collapse:collapse;min-width:660px;font-size:13px}
+.tbl th{text-align:start;font-family:var(--font-h);font-size:11.5px;font-weight:700;color:var(--muted);padding:11px 15px;
+  background:#0E1310;border-bottom:1px solid var(--line);white-space:nowrap;letter-spacing:.02em;position:relative}
+.tbl th.sortable{cursor:pointer;user-select:none}
+.tbl th.sortable:hover{color:var(--text)}
+.tbl td{padding:11px 15px;border-bottom:1px solid rgba(37,44,40,.55);vertical-align:middle}
+.tbl tbody tr{transition:background .15s;cursor:pointer}
+.tbl .progress{flex:1;min-width:70px}
+.field>.seg{align-self:flex-start}
+.seg button{min-width:64px;text-align:center}
+.tbl tbody tr:hover{background:rgba(255,255,255,.022)}
+.tbl tbody tr:last-child td{border-bottom:0}
+.tbl .t-strong{font-family:var(--font-h);font-weight:600;font-size:13px}
+.tbl .t-sub{font-size:11px;color:var(--muted)}
+.tbl-actions{display:flex;gap:5px;justify-content:flex-end}
+.tbl-empty{padding:34px;text-align:center;color:var(--muted);font-size:13px}
+
+/* ============================ 11. الشارات والحالات ============================ */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:600;
+  border:1px solid transparent;white-space:nowrap;line-height:1.7}
+.badge i{width:5px;height:5px;border-radius:50%;background:currentColor;flex:0 0 auto}
+.b-new{color:#8FC3DC;background:rgba(111,168,199,.12);border-color:rgba(111,168,199,.24)}
+.b-prog{color:#43DBA4;background:rgba(0,200,120,.1);border-color:rgba(0,200,120,.24)}
+.b-review{color:#E9BE6E;background:rgba(229,169,61,.1);border-color:rgba(229,169,61,.24)}
+.b-done{color:#04120C;background:var(--green);border-color:var(--green)}
+.b-late{color:#F09090;background:rgba(228,91,91,.12);border-color:rgba(228,91,91,.26)}
+.b-rej{color:#F09090;background:rgba(228,91,91,.1);border-color:rgba(228,91,91,.22)}
+.b-off{color:#8A948E;background:rgba(255,255,255,.04);border-color:var(--line)}
+.b-p-low{color:#9AA5A0;background:rgba(255,255,255,.04);border-color:var(--line)}
+.b-p-med{color:#8FC3DC;background:rgba(111,168,199,.1);border-color:rgba(111,168,199,.2)}
+.b-p-high{color:#E9BE6E;background:rgba(229,169,61,.1);border-color:rgba(229,169,61,.22)}
+.b-p-urg{color:#F09090;background:rgba(228,91,91,.12);border-color:rgba(228,91,91,.26)}
+.b-green{color:var(--green);background:var(--green-dim);border-color:rgba(0,200,120,.25)}
+.dot-status{width:7px;height:7px;border-radius:50%;display:inline-block}
+
+/* ============================ 12. التقدم والرسوم ============================ */
+.progress{height:6px;background:#1A211D;border-radius:99px;overflow:hidden;min-width:56px}
+.progress i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--green-dark),var(--green));transition:width .5s ease}
+.progress.thin{height:4px}
+.progress.warn i{background:linear-gradient(90deg,#8A6520,var(--warn))}
+.progress.bad i{background:linear-gradient(90deg,#8A3030,var(--danger))}
+.pct{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.chart svg{width:100%;height:auto;display:block;overflow:visible}
+.chart .grid-l{stroke:#1C2420;stroke-width:1}
+.chart .axis-t{fill:#6B756F;font-size:9.5px;font-family:var(--font-b)}
+.chart-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-top:10px}
+.chart-legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-inline-end:5px}
+.donut-wrap{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.donut{position:relative;width:124px;height:124px;flex:0 0 auto;border-radius:50%}
+.donut-txt{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+.donut-txt b{font-family:var(--font-h);font-size:20px;display:block;line-height:1.1}
+.donut-txt span{font-size:9.5px;color:var(--muted)}
+.legend{display:flex;flex-direction:column;gap:7px;font-size:11.5px;flex:1;min-width:120px}
+.legend div{display:flex;align-items:center;gap:7px;color:var(--muted)}
+.legend i{width:7px;height:7px;border-radius:2px;flex:0 0 auto}
+.legend b{margin-inline-start:auto;color:var(--text);font-weight:600}
+.bars{display:flex;flex-direction:column;gap:11px}
+.bars .b-row{display:grid;grid-template-columns:100px 1fr 38px;gap:10px;align-items:center;font-size:12px}
+.bars .b-row span{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bars .b-row b{text-align:end;font-weight:600;font-size:11.5px;font-variant-numeric:tabular-nums}
+.bars .b-track{height:7px;background:#1A211D;border-radius:99px;overflow:hidden}
+.bars .b-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,rgba(0,200,120,.55),var(--green))}
+@media(max-width:520px){.bars .b-row{grid-template-columns:78px 1fr 32px;font-size:11px}}
+
+/* ============================ 13. النماذج ============================ */
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field>label{font-size:12px;color:#B4BEB8;font-weight:500;display:flex;align-items:center;gap:5px}
+.field>label em{color:var(--danger);font-style:normal}
+.input,.select,textarea,.file-in{width:100%;background:#0C110E;border:1px solid var(--line);border-radius:9px;
+  padding:9px 11px;font-size:13.5px;min-height:40px;transition:.18s;font-family:var(--font-b);color:var(--text)}
+textarea{resize:vertical;min-height:88px;line-height:1.8}
+.input::placeholder,textarea::placeholder{color:#5C665F}
+.input:focus,.select:focus,textarea:focus{outline:none;border-color:rgba(0,200,120,.45);box-shadow:0 0 0 3px rgba(0,200,120,.08)}
+.select{appearance:none;background-image:url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23929B95' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:left 10px center;padding-left:28px}
+.select option{background:#0C110E;color:var(--text)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.form-grid.one{grid-template-columns:1fr}
+.span-2{grid-column:1/-1}
+.form-actions{display:flex;gap:9px;justify-content:flex-start;flex-wrap:wrap;margin-top:18px}
+.hint{font-size:11px;color:#6B756F;line-height:1.6}
+.err-msg{font-size:12px;color:#F09090;background:rgba(228,91,91,.08);border:1px solid rgba(228,91,91,.22);
+  border-radius:8px;padding:9px 11px;margin-bottom:12px;line-height:1.6}
+.ok-msg{font-size:12px;color:#7FE2B8;background:rgba(0,200,120,.07);border:1px solid rgba(0,200,120,.22);
+  border-radius:8px;padding:9px 11px;margin-bottom:12px;line-height:1.6}
+.switch{display:inline-flex;align-items:center;gap:9px;cursor:pointer;font-size:12.5px;color:#B4BEB8}
+.switch input{position:absolute;opacity:0;width:0;height:0}
+.switch i{width:36px;height:20px;border-radius:99px;background:#242C27;position:relative;transition:.2s;flex:0 0 auto}
+.switch i::after{content:"";position:absolute;width:14px;height:14px;border-radius:50%;background:#8A948E;top:3px;inset-inline-end:3px;transition:.2s}
+.switch input:checked+i{background:rgba(0,200,120,.3)}
+.switch input:checked+i::after{background:var(--green);inset-inline-end:19px}
+@media(max-width:560px){.form-grid{grid-template-columns:1fr}}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.toolbar .input,.toolbar .select{width:auto;min-width:130px;font-size:12.5px;min-height:36px;padding:6px 10px}
+.toolbar .search-i{position:relative}
+.toolbar .search-i svg{position:absolute;inset-inline-start:9px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:#6B756F}
+.toolbar .search-i input{padding-inline-start:30px;min-width:200px}
+@media(max-width:600px){.toolbar{width:100%}.toolbar .search-i,.toolbar .search-i input,.toolbar .select,.toolbar .input{width:100%;min-width:0}}
+
+/* ============================ 14. النوافذ والتنبيهات ============================ */
+.modal-back{position:fixed;inset:0;background:rgba(4,6,5,.74);backdrop-filter:blur(5px);z-index:200;
+  display:flex;align-items:flex-start;justify-content:center;padding:22px;overflow-y:auto}
+.modal{width:min(660px,100%);background:#0E1310;border:1px solid var(--line);border-radius:16px;
+  box-shadow:0 40px 100px -40px #000;margin:auto;animation:pop .2s ease}
+.modal.wide{width:min(920px,100%)}
+.modal.sm{width:min(430px,100%)}
+.modal-head{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;
+  align-items:center;gap:12px;position:sticky;top:0;background:#0E1310;border-radius:16px 16px 0 0;z-index:2}
+.modal-head h3{font-size:15.5px}
+.modal-body{padding:20px}
+.modal-foot{padding:14px 20px;border-top:1px solid var(--line);display:flex;gap:9px;flex-wrap:wrap}
+.modal-x{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;color:var(--muted);border:1px solid transparent}
+.modal-x:hover{background:rgba(255,255,255,.05);color:var(--text);border-color:var(--line)}
+.modal-x svg{width:16px;height:16px}
+@keyframes pop{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:none}}
+@media(max-width:600px){.modal-back{padding:10px}.modal-body{padding:16px}.modal-foot{padding:12px 16px}.modal-head{padding:14px 16px}}
+.toast-root{position:fixed;bottom:20px;inset-inline-start:20px;z-index:300;display:flex;flex-direction:column;gap:9px;max-width:min(360px,88vw)}
+.toast{background:#121814;border:1px solid var(--line);border-inline-start:2px solid var(--green);padding:10px 14px;
+  border-radius:9px;font-size:13px;box-shadow:0 20px 50px -26px #000;animation:slideIn .24s ease;display:flex;gap:8px;align-items:flex-start;line-height:1.6}
+.toast.err{border-inline-start-color:var(--danger)}
+.toast.warn{border-inline-start-color:var(--warn)}
+.toast svg{width:15px;height:15px;flex:0 0 auto;margin-top:2px;color:var(--green)}
+.toast.err svg{color:var(--danger)}
+.toast.warn svg{color:var(--warn)}
+@keyframes slideIn{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:none}}
+
+/* ============================ 15. متنوعات ============================ */
+.empty{padding:40px 18px;text-align:center;color:#7C867F;font-size:13px;line-height:1.8}
+.empty svg{width:38px;height:38px;margin:0 auto 10px;opacity:.3}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:9px 13px;font-size:12.5px;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap;transition:.18s;font-family:var(--font-h);font-weight:600}
+.tab:hover{color:var(--text)}
+.tab.on{color:var(--text);border-color:var(--green)}
+.tab .n{font-size:10px;background:rgba(255,255,255,.06);border-radius:99px;padding:0 5px;margin-inline-start:4px;color:var(--muted)}
+.list{display:flex;flex-direction:column}
+.list-item{display:flex;align-items:flex-start;gap:11px;padding:12px 16px;border-bottom:1px solid rgba(37,44,40,.5);transition:.15s}
+.list-item:last-child{border-bottom:0}
+.list-item:hover{background:rgba(255,255,255,.02)}
+.list-item .tt{font-size:13px;font-weight:500;line-height:1.55}
+.list-item .ss{font-size:11px;color:var(--muted);line-height:1.5;margin-top:2px}
+.list-item.unread{background:rgba(0,200,120,.035)}
+.list-item.unread .tt{font-weight:600}
+.mini-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;font-size:10.5px;text-align:center}
+.mini-cal .d{aspect-ratio:1;display:grid;place-items:center;border-radius:6px;color:#8A948E}
+.mini-cal .d.on{background:rgba(0,200,120,.14);color:var(--green);font-weight:700}
+.mini-cal .d.today{box-shadow:inset 0 0 0 1px rgba(0,200,120,.5);color:var(--text)}
+.mini-cal .d.mut{opacity:.3}
+.mini-cal .hd{color:#5C665F;font-size:9.5px;padding:3px 0}
+.cal-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:11px;overflow:hidden}
+.cal-dow{background:#0E1310;padding:7px 4px;text-align:center;font-size:10.5px;color:var(--muted);font-family:var(--font-h);font-weight:600}
+.cal-cell{background:var(--card);min-height:86px;padding:6px;display:flex;flex-direction:column;gap:2px;font-size:10.5px;transition:.15s;border:0;text-align:start;width:100%}
+.cal-cell:hover{background:var(--card-2)}
+.cal-cell.out{background:#0A0D0B;opacity:.4}
+.cal-cell.today{background:#0F1913;box-shadow:inset 0 0 0 1px rgba(0,200,120,.4)}
+.cal-num{font-size:10.5px;color:#8A948E;font-weight:600}
+.cal-ev{background:rgba(0,200,120,.1);border-inline-start:2px solid var(--green);padding:1px 4px;border-radius:3px;
+  font-size:9.5px;color:#C9F2E0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%;text-align:start}
+.cal-ev.gray{border-inline-start-color:var(--info);background:rgba(111,168,199,.1);color:#CAE3F0}
+@media(max-width:700px){.cal-cell{min-height:58px;padding:3px}.cal-ev{font-size:8.5px}.cal-dow{font-size:9px;padding:5px 1px}}
+.setup{max-width:760px;margin:40px auto;padding:0;border:1px solid var(--line);border-radius:18px;background:var(--card);overflow:hidden}
+.setup-head{padding:26px 26px 20px;border-bottom:1px solid var(--line);background:linear-gradient(150deg,rgba(0,200,120,.07),transparent 60%)}
+.setup-body{padding:22px 26px 26px}
+.code{background:#080B09;border:1px solid var(--line);border-radius:9px;padding:12px 14px;font-family:ui-monospace,Menlo,monospace;
+  font-size:11.5px;color:#B7E9D1;direction:ltr;text-align:left;overflow-x:auto;line-height:1.85;white-space:pre}
+.step{display:flex;gap:12px;padding:13px 0;border-bottom:1px dashed rgba(37,44,40,.7)}
+.step:last-child{border:0}
+.step .n{width:24px;height:24px;border-radius:50%;border:1px solid rgba(0,200,120,.35);color:var(--green);
+  display:grid;place-items:center;font-size:11px;font-weight:700;flex:0 0 auto;font-family:var(--font-h)}
+.step b{font-size:13px;font-family:var(--font-h);display:block;margin-bottom:3px}
+.step p{font-size:12px;color:var(--muted);line-height:1.75}
+.notice{display:flex;gap:10px;align-items:flex-start;padding:11px 14px;border-radius:10px;font-size:12.5px;line-height:1.7;
+  background:rgba(229,169,61,.07);border:1px solid rgba(229,169,61,.2);color:#DCC28E}
+.notice.green{background:rgba(0,200,120,.06);border-color:rgba(0,200,120,.2);color:#9EE6C7}
+.notice.bad{background:rgba(228,91,91,.07);border-color:rgba(228,91,91,.2);color:#EBA3A3}
+.notice svg{width:16px;height:16px;flex:0 0 auto;margin-top:2px}
+.preview-ribbon{background:rgba(229,169,61,.1);border-bottom:1px solid rgba(229,169,61,.25);color:#E3C68E;
+  font-size:12px;padding:7px 16px;text-align:center;display:flex;align-items:center;justify-content:center;gap:8px}
+.preview-ribbon svg{width:14px;height:14px}
+.boot{position:fixed;inset:0;background:var(--bg);z-index:900;display:grid;place-items:center;gap:18px;
+  grid-auto-flow:row;transition:opacity .35s,visibility .35s}
+.boot.done{opacity:0;visibility:hidden}
+.boot-logo{width:52px;height:52px;border:1px solid rgba(0,200,120,.3);border-radius:14px;position:relative;
+  display:grid;place-items:center;background:rgba(0,200,120,.06);animation:float 2.4s ease-in-out infinite}
+.boot-logo::before{content:"";width:16px;height:16px;border:2px solid var(--green);border-radius:3px;transform:rotate(45deg)}
+.boot-bar{width:120px;height:2px;background:#1C2420;border-radius:2px;overflow:hidden}
+.boot-bar i{display:block;width:40%;height:100%;background:var(--green);border-radius:2px;animation:load 1.1s ease-in-out infinite}
+@keyframes load{0%{transform:translateX(-100%)}100%{transform:translateX(320%)}}
+.skel{background:linear-gradient(90deg,#141A16 25%,#1A211C 50%,#141A16 75%);background-size:200% 100%;animation:sk 1.4s infinite;border-radius:8px}
+@keyframes sk{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.badge-role{font-size:9.5px;padding:1px 6px;border-radius:4px;background:rgba(0,200,120,.1);color:var(--green);
+  border:1px solid rgba(0,200,120,.22);font-weight:700;letter-spacing:.02em}
+.attach{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:12px;background:#0C110E}
+.attach svg{width:14px;height:14px;color:var(--green);flex:0 0 auto}
+.attach span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.comment{display:flex;gap:9px;padding:10px 0;border-bottom:1px solid rgba(37,44,40,.5)}
+.comment:last-child{border:0}
+.comment .bd{font-size:12.5px;line-height:1.75;color:#D5DCD7}
+.kv{display:grid;grid-template-columns:118px 1fr;gap:7px 12px;font-size:12.5px}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;color:var(--text)}
+@media(max-width:520px){.kv{grid-template-columns:1fr;gap:2px}.kv dd{margin-bottom:8px}}
+
+/* ============================ 16. الطباعة / PDF ============================ */
+@media print{
+  body{background:#fff!important;color:#000!important}
+  .side,.topbar,.site-header,.footer,.no-print,.toast-root,.modal-back,.preview-ribbon,.tabs .tab{display:none!important}
+  .main{margin:0!important}
+  .page{padding:0!important;max-width:none!important}
+  .panel,.card{border:1px solid #ccc!important;background:#fff!important;box-shadow:none!important;break-inside:avoid}
+  .panel-head,.tbl th{background:#f2f2f2!important;color:#000!important}
+  .tbl td,.tbl th{color:#000!important;border-color:#ddd!important}
+  .kpi{border-color:#ddd!important;background:#fff!important}
+  .kpi .val,.panel-title,h1,h2,h3{color:#000!important}
+  .kpi .lbl,.muted,.page-head p{color:#444!important}
+  .badge{border-color:#999!important;color:#000!important;background:#f5f5f5!important}
+  .progress{border:1px solid #999}
+  .progress i{background:#555!important}
+  .print-head{display:flex!important;align-items:center;justify-content:space-between;margin-bottom:16px;
+    padding-bottom:10px;border-bottom:2px solid #000}
+}
+.print-head{display:none}
+
+/* ============================ 17. إضافات النظام ============================ */
+.pick-row{display:flex;flex-wrap:wrap;gap:7px}
+.pick{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;border:1px solid var(--line);
+  background:rgba(255,255,255,.02);font-size:12.5px;color:#B4BEB8;transition:.18s}
+.pick:hover{border-color:#3A453E;color:var(--text)}
+.pick.on{border-color:rgba(0,200,120,.45);background:rgba(0,200,120,.1);color:var(--green);font-weight:600}
+.pick .avatar{width:22px;height:22px;font-size:9px;border:0}
+.order-hero{border:1px solid rgba(0,200,120,.22);border-radius:var(--r-xl);padding:26px;
+  background:radial-gradient(circle at 88% 8%,rgba(0,200,120,.14),transparent 55%),linear-gradient(150deg,#0F1A14,#0B0F0C 62%)}
+.order-hero h2{font-size:clamp(19px,2.4vw,24px);margin-bottom:6px}
+.order-hero p{font-size:13.5px;color:var(--muted);max-width:62ch;line-height:1.8}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;flex-wrap:wrap}
+.seg button{padding:6px 11px;font-size:11.5px;color:var(--muted);border-inline-start:1px solid var(--line);transition:.18s}
+.seg button:first-child{border:0}
+.seg button.on{background:rgba(0,200,120,.13);color:var(--green);font-weight:700}
+.seg button:hover{color:var(--text)}
+.task-line{display:flex;align-items:center;gap:8px;min-width:0}
+.task-line .av{flex:0 0 auto}
+.task-title{font-family:var(--font-h);font-weight:600;font-size:13px;line-height:1.5;display:block;
+  overflow:hidden;text-overflow:ellipsis;max-width:38ch}
+.task-title:hover{color:var(--green)}
+.task-tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:3px}
+.task-tags span{font-size:10px;color:#7C867F;background:rgba(255,255,255,.04);border-radius:4px;padding:0 5px}
+.meet-item{display:flex;gap:12px;padding:13px 16px;border-bottom:1px solid rgba(37,44,40,.5);transition:.15s}
+.meet-item:last-child{border-bottom:0}
+.meet-item:hover{background:rgba(255,255,255,.02)}
+.meet-date{width:52px;flex:0 0 auto;text-align:center;border:1px solid var(--line);border-radius:10px;padding:5px 2px;background:#0C110E}
+.meet-date b{display:block;font-family:var(--font-h);font-size:17px;line-height:1.1;color:var(--green)}
+.meet-date span{font-size:9.5px;color:var(--muted)}
+.meet-body{min-width:0;flex:1}
+.meet-body h4{font-size:13px;font-family:var(--font-h);font-weight:600;margin:0 0 2px}
+.meet-body .m{font-size:11px;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.avstack{display:flex}
+.avstack .avatar{width:24px;height:24px;font-size:9px;margin-inline-start:-6px;border:2px solid var(--card);box-shadow:none}
+.avstack .avatar:first-child{margin:0}
+.code-pill{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;letter-spacing:.06em;background:#0C110E;
+  border:1px solid var(--line);border-radius:6px;padding:1px 7px;color:#B7E9D1;direction:ltr;display:inline-block}
+.team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.member{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:12px;transition:.22s}
+.member:hover{border-color:rgba(0,200,120,.28)}
+.member .top{display:flex;gap:11px;align-items:center}
+.member .nm{font-family:var(--font-h);font-size:14px;font-weight:700;line-height:1.4}
+.member .rl{font-size:11px;color:var(--muted)}
+.member .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;border-top:1px solid var(--line);padding-top:11px}
+.member .stats div{text-align:center}
+.member .stats b{display:block;font-family:var(--font-h);font-size:15px;line-height:1.2}
+.member .stats span{font-size:9.5px;color:var(--muted)}
+.member .acts{display:flex;gap:6px}
+.member .acts .btn{flex:1;min-height:32px;font-size:11.5px;padding:4px 8px}
+.sec-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px}
+.sec-card h3{font-size:14.5px;margin-bottom:4px}
+.sec-card .d{font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.7}
+.stat-inline{display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.stat-inline b{color:var(--text);font-family:var(--font-h)}
+.legend-dot{width:8px;height:8px;border-radius:2px;display:inline-block}
+</style>
+</head>
+<body>
+<div id="app" aria-live="polite"></div>
+<div id="modal-root"></div>
+<div id="toast-root" class="toast-root" aria-live="assertive"></div>
+<div id="boot" class="boot"><div class="boot-logo"></div><div class="boot-bar"><i></i></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous"></script>
+<script>
+/* ==========================================================================
+   إعدادات الربط — اختياري (النظام يعمل بالكامل بدونها في الوضع المحلي)
+   SUPABASE_URL + SUPABASE_ANON_KEY: من Project Settings → API
+   المزامنة تستخدم جدولًا واحدًا باسم dec_state (انظر supabase/schema.sql)
+   ========================================================================== */
+window.DEC_CONFIG = {
+  SUPABASE_URL: "",
+  SUPABASE_ANON_KEY: "",
+  BRAND: "DEC",
+  TEAM: "Dark Storm",
+  VERSION: "1.0.0"
+};
+</script>
+<script>
+/* ==========================================================================
+   DEC MANAGEMENT SYSTEM — Application
+   ========================================================================== */
+(function () {
+  'use strict';
+
+  var CFG = Object.assign({
+    SUPABASE_URL: '', SUPABASE_ANON_KEY: '', BRAND: 'DEC', TEAM: 'Dark Storm', VERSION: '1.0.0'
+  }, window.DEC_CONFIG || {});
+
+  var LS_KEY = 'dec_ms_state_v1';
+  var SS_KEY = 'dec_ms_session_v1';
+  var app = document.getElementById('app');
+  var modalRoot = document.getElementById('modal-root');
+  var toastRoot = document.getElementById('toast-root');
+
+  /* ------------------------------ 1. أدوات ------------------------------ */
+  function $(s, r) { return (r || document).querySelector(s); }
+  function esc(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function uid(p) { return p + '_' + Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-3); }
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function iso(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function todayISO() { return iso(new Date()); }
+  function parseISO(s) {
+    var p = String(s || '').split('-').map(Number);
+    return new Date(p[0] || 1970, (p[1] || 1) - 1, p[2] || 1);
+  }
+  var MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+  var DAYS = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+  var DAYS_SHORT = ['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'];
+  var MONTHS_SHORT = ['ينا', 'فبر', 'مار', 'أبر', 'ماي', 'يون', 'يول', 'أغس', 'سبت', 'أكت', 'نوف', 'ديس'];
+
+  function fmtDate(s) {
+    if (!s) return '—';
+    var d = parseISO(s);
+    return d.getDate() + ' ' + MONTHS[d.getMonth()];
+  }
+  function fmtFull(s) {
+    if (!s) return '—';
+    var d = parseISO(s);
+    return DAYS[d.getDay()] + '، ' + d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear();
+  }
+  function fmtNum(n) { return String(n); }
+  function fromNow(ts) {
+    var m = Math.round((Date.now() - ts) / 60000);
+    if (m < 1) return 'الآن';
+    if (m < 60) return 'منذ ' + m + ' دقيقة';
+    var h = Math.round(m / 60);
+    if (h < 24) return 'منذ ' + h + ' ساعة';
+    var d = Math.round(h / 24);
+    if (d < 30) return 'منذ ' + d + ' يوم';
+    return fmtDate(iso(new Date(ts)));
+  }
+  function daysLeft(due) {
+    if (!due) return null;
+    var a = parseISO(todayISO()).getTime(), b = parseISO(due).getTime();
+    return Math.round((b - a) / 86400000);
+  }
+  function addDays(n) {
+    var d = new Date();
+    d.setDate(d.getDate() + n);
+    return iso(d);
+  }
+  function plural(n, one, two, many) {
+    if (n === 1) return one;
+    if (n === 2) return two;
+    return (many || two);
+  }
+
+  /* ------------------------------ 2. الأيقونات ------------------------------ */
+  var ICONS = {
+    grid: '<rect x="3" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.6"/>',
+    task: '<path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/>',
+    zap: '<path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/>',
+    cal: '<rect x="3" y="4.5" width="18" height="17" rx="2.5"/><path d="M16 2.5v4M8 2.5v4M3 10h18"/>',
+    users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.2a4 4 0 0 1 0 7.6"/>',
+    chart: '<path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6" rx="1"/><rect x="12" y="8" width="3" height="10" rx="1"/><rect x="17" y="5" width="3" height="13" rx="1"/>',
+    bell: '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>',
+    gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6 1.65 1.65 0 0 0 10 3.09V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    search: '<circle cx="11" cy="11" r="7"/><path d="m20.5 20.5-3.6-3.6"/>',
+    x: '<path d="M18 6 6 18M6 6l12 12"/>',
+    edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+    trash: '<path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/>',
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5.2l3.2 1.9"/>',
+    flag: '<path d="M4 21V3"/><path d="M4 4h13l-2 4.5L17 13H4"/>',
+    logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>',
+    menu: '<path d="M3 6h18M3 12h18M3 18h18"/>',
+    down: '<path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>',
+    up: '<path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/>',
+    check: '<path d="m5 12 5 5L20 7"/>',
+    right: '<path d="m9 6 6 6-6 6"/>',
+    left: '<path d="m15 6-6 6 6 6"/>',
+    alert: '<path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 2 18a2 2 0 0 0 1.7 3h16.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>',
+    msg: '<path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+    link: '<path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/>',
+    target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4"/>',
+    shield: '<path d="M12 3 5 6v6c0 4 3 7 7 9 4-2 7-5 7-9V6z"/><path d="m9 12 2 2 4-4"/>',
+    brief: '<rect x="3" y="7" width="18" height="13" rx="2.5"/><path d="M9 7V5.5A2.5 2.5 0 0 1 11.5 3h1A2.5 2.5 0 0 1 15 5.5V7"/>',
+    refresh: '<path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/>',
+    print: '<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 15h12v6H6z"/>',
+    copy: '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>',
+    user: '<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/>',
+    board: '<rect x="3" y="3" width="18" height="18" rx="2.5"/><path d="M9 3v18M3 9h18"/>',
+    star: '<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2-5.5-2.9-5.5 2.9 1-6.2L3 9.6l6.2-.9z"/>',
+    lock: '<rect x="4" y="10" width="16" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>'
+  };
+  function ico(n, cls) {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ico-svg' +
+      (cls ? ' ' + cls : '') + '">' + (ICONS[n] || '') + '</svg>';
+  }
+
+  /* ------------------------------ 3. ثوابت النظام ------------------------------ */
+  var ST = {
+    new: { l: 'جديدة', c: 'b-new' },
+    progress: { l: 'قيد التنفيذ', c: 'b-prog' },
+    review: { l: 'مراجعة', c: 'b-review' },
+    done: { l: 'مكتملة', c: 'b-done' }
+  };
+  var PR = {
+    low: { l: 'منخفضة', c: 'b-p-low' },
+    med: { l: 'متوسطة', c: 'b-p-med' },
+    high: { l: 'عالية', c: 'b-p-high' },
+    urg: { l: 'عاجلة', c: 'b-p-urg' }
+  };
+  var MT = {
+    meeting: { l: 'اجتماع', c: 'b-prog' },
+    appt: { l: 'موعد', c: 'b-new' },
+    interview: { l: 'مقابلة', c: 'b-review' },
+    delivery: { l: 'تسليم', c: 'b-p-urg' }
+  };
+  var ROLE = { admin: 'إدارة', supervisor: 'مشرف', employee: 'موظف' };
+
+  var BRAND = CFG.BRAND || 'DEC';
+  var TEAM = CFG.TEAM || 'Dark Storm';
+  var VER = CFG.VERSION || '1.0.0';
+
+  function brandMark(size) {
+    var s = size || 38;
+    return '<svg width="' + s + '" height="' + s + '" viewBox="0 0 40 40" fill="none" aria-hidden="true">' +
+      '<rect x="1" y="1" width="38" height="38" rx="11" stroke="#00C878" stroke-opacity=".35"/>' +
+      '<rect x="1" y="1" width="38" height="38" rx="11" stroke="url(#dg)" stroke-opacity=".9"/>' +
+      '<defs><linearGradient id="dg" x1="0" y1="0" x2="40" y2="40"><stop stop-color="#00C878" stop-opacity=".55"/><stop offset="1" stop-color="#00C878" stop-opacity="0"/></linearGradient></defs>' +
+      '<path d="M13 11h6.5c5.2 0 9 3.8 9 9s-3.8 9-9 9H13z" stroke="#00C878" stroke-width="2" stroke-linejoin="round"/>' +
+      '<path d="M18 16.5v7" stroke="#00C878" stroke-width="2" stroke-linecap="round"/></svg>';
+  }
+
+  /* ------------------------------ 4. البيانات ------------------------------ */
+  var DB = null;
+  var S = {
+    uid: null,
+    view: 'dashboard',
+    sideOpen: false,
+    calRef: new Date(),
+    f: { q: '', st: '', who: '', pr: '' },
+    pending: null,
+    hideCodes: {},
+    cloudErr: '',
+    showFormErr: ''
+  };
+
+  function seed() {
+    var t = Date.now();
+    var u = [
+      { id: 'u_admin1', name: 'هشام وليد', code: 'h44', role: 'admin', title: 'مدير الإدارة', active: true, phone: '', since: '2024-01-01' },
+      { id: 'u_admin2', name: 'إياد الشربيني', code: 'h44', role: 'admin', title: 'مدير الإدارة', active: true, phone: '', since: '2024-01-01' },
+      { id: 'u_sup', name: 'مشرف الفريق', code: 'h303', role: 'supervisor', title: 'مشرف تنفيذي', active: true, phone: '', since: '2024-03-01' },
+      { id: 'u_ziad', name: 'زياد', code: 'H2', role: 'employee', title: 'منفّذ مشاريع', active: true, phone: '', since: '2025-02-01' },
+      { id: 'u_yousef', name: 'يوسف أبو زيد', code: 'H1', role: 'employee', title: 'منفّذ مشاريع', active: true, phone: '', since: '2025-02-01' }
+    ];
+    var tasks = [
+      { id: 't1', title: 'إعداد عرض تقديمي لعميل جديد', desc: 'تجهيز عرض من 12 شريحة يشمل نطاق العمل والتسعير والجدول الزمني.', assigneeId: 'u_ziad', createdBy: 'u_admin1', priority: 'high', status: 'progress', progress: 60, due: addDays(2), tags: ['مبيعات'], at: t - 86400000 * 3, comments: [{ id: 'c1', by: 'u_admin1', text: 'أضف شريحة عن الدعم الفني بعد التسليم.', at: t - 86400000 * 2 }] },
+      { id: 't2', title: 'مراجعة تقرير الأداء الشهري', desc: 'مراجعة أرقام الشهر الماضي ومقارنتها بالمستهدف وإبراز الفجوات.', assigneeId: 'u_yousef', createdBy: 'u_admin2', priority: 'med', status: 'progress', progress: 30, due: addDays(-1), tags: ['تقارير'], at: t - 86400000 * 5, comments: [] },
+      { id: 't3', title: 'تحديث صفحة الخدمات على الموقع', desc: 'إضافة خدمة الأنظمة الإدارية وتحديث النصوص والأسعار.', assigneeId: 'u_ziad', createdBy: 'u_sup', priority: 'med', status: 'new', progress: 0, due: addDays(5), tags: ['ويب'], at: t - 86400000 * 2, comments: [] },
+      { id: 't4', title: 'تجهيز بيئة الاختبار للمشروع الجديد', desc: 'إنشاء نسخة تجريبية وبيانات دخول للعميل للمراجعة.', assigneeId: 'u_yousef', createdBy: 'u_sup', priority: 'urg', status: 'review', progress: 80, due: addDays(1), tags: ['تشغيل'], at: t - 86400000 * 4, comments: [] },
+      { id: 't5', title: 'أرشفة ملفات العملاء القدامى', desc: 'تنظيم الملفات على المجلدات السحابية وإعداد فهرس بحث.', assigneeId: 'u_ziad', createdBy: 'u_admin1', priority: 'low', status: 'done', progress: 100, due: addDays(-6), tags: ['إدارة'], at: t - 86400000 * 12, comments: [] },
+      { id: 't6', title: 'متابعة خطة تسليم المشاريع', desc: 'تحديث لوحة التسليم ومتابعة نقاط التعطّل مع المنفّذين.', assigneeId: 'u_sup', createdBy: 'u_admin1', priority: 'high', status: 'progress', progress: 45, due: addDays(3), tags: ['متابعة'], at: t - 86400000 * 6, comments: [] },
+      { id: 't7', title: 'تجهيز تقرير الإنجاز الأسبوعي', desc: 'جمع إنجازات الفريق وإرسال الملخص كل خميس.', assigneeId: 'u_sup', createdBy: 'u_admin2', priority: 'med', status: 'new', progress: 0, due: addDays(1), tags: ['تقارير'], at: t - 86400000, comments: [] }
+    ];
+    var d = new Date();
+    var meetings = [
+      { id: 'm1', title: 'اجتماع الفريق الأسبوعي', type: 'meeting', date: todayISO(), time: '17:00', dur: 45, attendees: u.map(function (x) { return x.id; }), place: 'Google Meet', link: '', agenda: 'متابعة المهام المفتوحة وتوزيع أولويات الأسبوع.', createdBy: 'u_admin1', at: t - 86400000 * 2 },
+      { id: 'm2', title: 'مراجعة تسليم المشروع — العميل A', type: 'delivery', date: addDays(2), time: '13:00', dur: 60, attendees: ['u_admin2', 'u_sup', 'u_ziad'], place: 'المكتب — قاعة 2', link: '', agenda: 'مراجعة النسخة التجريبية وتحديد ملاحظات العميل.', createdBy: 'u_admin2', at: t - 86400000 },
+      { id: 'm3', title: 'مقابلة مرشح جديد', type: 'interview', date: addDays(4), time: '11:00', dur: 30, attendees: ['u_admin1', 'u_sup'], place: 'Google Meet', link: '', agenda: 'تقييم المهارات التقنية والتوافق مع الفريق.', createdBy: 'u_admin1', at: t - 80000000 },
+      { id: 'm4', title: 'تسليم النسخة النهائية — العميل B', type: 'delivery', date: addDays(6), time: '15:30', dur: 45, attendees: ['u_admin1', 'u_yousef'], place: 'أونلاين', link: '', agenda: 'تسليم الملفات النهائية وتوثيق التسليم.', createdBy: 'u_admin2', at: t - 50000000 }
+    ];
+    var notes = [
+      { id: 'n1', userId: 'u_ziad', title: 'مهمة جديدة من الإدارة', body: 'إعداد عرض تقديمي لعميل جديد — استحقاق ' + fmtDate(addDays(2)), kind: 'task', refId: 't1', at: t - 86400000 * 3, read: false },
+      { id: 'n2', userId: 'u_yousef', title: 'مهمة عاجلة', body: 'تجهيز بيئة الاختبار للمشروع الجديد — استحقاق ' + fmtDate(addDays(1)), kind: 'task', refId: 't4', at: t - 86400000 * 4, read: false },
+      { id: 'n3', userId: 'u_sup', title: 'اجتماع الفريق الأسبوعي', body: 'اليوم الساعة 17:00 — Google Meet', kind: 'meeting', refId: 'm1', at: t - 86400000 * 2, read: false }
+    ];
+    var activity = [
+      { id: 'a1', actorId: 'u_admin1', action: 'أنشأ مهمة', target: 'إعداد عرض تقديمي لعميل جديد', at: t - 86400000 * 3 },
+      { id: 'a2', actorId: 'u_sup', action: 'أسند مهمة إلى يوسف أبو زيد', target: 'تجهيز بيئة الاختبار للمشروع الجديد', at: t - 86400000 * 4 },
+      { id: 'a3', actorId: 'u_admin2', action: 'جدول اجتماعًا', target: 'مراجعة تسليم المشروع — العميل A', at: t - 86400000 },
+      { id: 'a4', actorId: 'u_ziad', action: 'أكمل مهمة', target: 'أرشفة ملفات العملاء القدامى', at: t - 86400000 * 2 }
+    ];
+    return { users: u, tasks: tasks, meetings: meetings, notes: notes, activity: activity, meta: { updatedAt: t, createdAt: t, seeded: true } };
+  }
+
+  function normalize() {
+    if (!DB || typeof DB !== 'object') DB = seed();
+    ['users', 'tasks', 'meetings', 'notes', 'activity'].forEach(function (k) {
+      if (!Array.isArray(DB[k])) DB[k] = [];
+    });
+    if (!DB.meta) DB.meta = {};
+    DB.users.forEach(function (u) {
+      u.id = u.id || uid('u');
+      u.code = String(u.code || '');
+      u.active = u.active !== false;
+      u.role = u.role || 'employee';
+    });
+    DB.tasks.forEach(function (t) {
+      t.progress = Math.max(0, Math.min(100, Number(t.progress) || 0));
+      if (!t.comments) t.comments = [];
+      if (!t.tags) t.tags = [];
+      if (t.status === 'done') t.progress = 100;
+    });
+    DB.meetings.forEach(function (m) { if (!m.attendees) m.attendees = []; });
+  }
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(LS_KEY);
+      DB = raw ? JSON.parse(raw) : seed();
+    } catch (e) { DB = seed(); }
+    normalize();
+  }
+  function save() {
+    DB.meta.updatedAt = Date.now();
+    try { localStorage.setItem(LS_KEY, JSON.stringify(DB)); } catch (e) { toast('تعذّر حفظ البيانات محليًا', 'err'); }
+    cloudPush();
+  }
+
+  /* ------------------------------ 5. السحابة (اختياري) ------------------------------ */
+  var sb = null, pushTimer = null, cloudOk = false;
+  function initCloud() {
+    if (!CFG.SUPABASE_URL || !CFG.SUPABASE_ANON_KEY) return;
+    if (!window.supabase || !window.supabase.createClient) return;
+    try {
+      sb = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY);
+    } catch (e) { sb = null; S.cloudErr = e.message; }
+  }
+  function cloudPull() {
+    if (!sb) return Promise.resolve(false);
+    return sb.from('dec_state').select('payload,updated_at').eq('id', 'main').maybeSingle()
+      .then(function (res) {
+        if (res.error) throw res.error;
+        var row = res.data;
+        if (!row || !row.payload) return false;
+        var localAt = (DB.meta && DB.meta.updatedAt) || 0;
+        var remoteAt = row.payload.meta && row.payload.meta.updatedAt || 0;
+        if (remoteAt > localAt) {
+          DB = row.payload; normalize(); cloudOk = true;
+          return true;
+        }
+        cloudOk = true;
+        return false;
+      })
+      .catch(function (e) { S.cloudErr = e.message || 'sync error'; cloudOk = false; return false; });
+  }
+  function cloudPush() {
+    if (!sb) return;
+    clearTimeout(pushTimer);
+    pushTimer = setTimeout(function () {
+      sb.from('dec_state').upsert({ id: 'main', payload: DB, updated_at: new Date().toISOString() })
+        .then(function (res) { if (res.error) { S.cloudErr = res.error.message; cloudOk = false; } else { cloudOk = true; S.cloudErr = ''; } })
+        .catch(function (e) { S.cloudErr = e.message; cloudOk = false; });
+    }, 900);
+  }
+
+  /* ------------------------------ 6. الجلسة والصلاحيات ------------------------------ */
+  function restoreSession() {
+    try {
+      var raw = localStorage.getItem(SS_KEY);
+      if (!raw) return;
+      var s = JSON.parse(raw);
+      if (s && s.uid && DB.users.some(function (u) { return u.id === s.uid; })) S.uid = s.uid;
+    } catch (e) { /* ignore */ }
+  }
+  function persistSession() {
+    try {
+      if (S.uid) localStorage.setItem(SS_KEY, JSON.stringify({ uid: S.uid }));
+      else localStorage.removeItem(SS_KEY);
+    } catch (e) { /* ignore */ }
+  }
+  function me() { return DB.users.filter(function (u) { return u.id === S.uid; })[0] || null; }
+  function userById(id) { return DB.users.filter(function (u) { return u.id === id; })[0] || null; }
+  function nameOf(id) { var u = userById(id); return u ? u.name : 'غير محدد'; }
+  function isAdmin() { var u = me(); return !!u && u.role === 'admin'; }
+  function isStaff() { var u = me(); return !!u && (u.role === 'admin' || u.role === 'supervisor'); }
+
+  function visibleTasks() {
+    var u = me(); if (!u) return [];
+    if (u.role === 'employee') {
+      return DB.tasks.filter(function (t) { return t.assigneeId === u.id || t.createdBy === u.id; });
+    }
+    if (u.role === 'supervisor') return DB.tasks.slice();
+    return DB.tasks.slice();
+  }
+  function canCreateTask() { return isStaff(); }
+  function assignables() {
+    var u = me(); if (!u) return [];
+    if (u.role === 'admin') return DB.users.filter(function (x) { return x.active; });
+    if (u.role === 'supervisor') return DB.users.filter(function (x) { return x.active && x.role === 'employee'; });
+    return [u];
+  }
+  function canEditTask(t) {
+    var u = me(); if (!u || !t) return false;
+    if (u.role === 'admin') return true;
+    if (t.createdBy === u.id) return true;
+    if (t.assigneeId === u.id) return true;
+    return false;
+  }
+  function canDeleteTask(t) {
+    var u = me(); if (!u || !t) return false;
+    return u.role === 'admin' || t.createdBy === u.id;
+  }
+  function isLate(t) { return t.status !== 'done' && t.due && t.due < todayISO(); }
+  function statusOf(t) { return isLate(t) ? 'late' : t.status; }
+
+  function visibleMeetings() {
+    var u = me(); if (!u) return [];
+    if (u.role === 'employee') {
+      return DB.meetings.filter(function (m) { return (m.attendees || []).indexOf(u.id) > -1 || m.createdBy === u.id; });
+    }
+    return DB.meetings.slice();
+  }
+  function unreadCount() {
+    return DB.notes.filter(function (n) { return n.userId === S.uid && !n.read; }).length;
+  }
+  function log(actorId, action, target) {
+    DB.activity.unshift({ id: uid('a'), actorId: actorId, action: action, target: target, at: Date.now() });
+    if (DB.activity.length > 300) DB.activity.length = 300;
+  }
+  function notify(uids, title, body, kind, refId) {
+    (uids || []).forEach(function (id) {
+      if (!id || id === S.uid) return;
+      DB.notes.unshift({ id: uid('n'), userId: id, title: title, body: body, kind: kind || 'task', refId: refId || '', at: Date.now(), read: false });
+    });
+    if (DB.notes.length > 400) DB.notes.length = 400;
+  }
+
+  /* ------------------------------ 7. واجهات صغيرة ------------------------------ */
+  function initials(n) {
+    var p = String(n || '').trim().split(/\s+/);
+    return ((p[0] || '')[0] || '') + ((p[1] || '')[0] || '');
+  }
+  function avatar(u, size) {
+    if (!u) return '<div class="avatar ' + (size || '') + '">—</div>';
+    return '<div class="avatar ' + (size || '') + '" title="' + esc(u.name) + '">' + esc(initials(u.name)) + '</div>';
+  }
+  function avstack(ids, max) {
+    var lim = max || 4;
+    var us = (ids || []).map(userById).filter(Boolean);
+    var shown = us.slice(0, lim).map(function (u) { return avatar(u, 'sm'); }).join('');
+    var rest = us.length - lim;
+    return '<div class="avstack">' + shown + (rest > 0 ? '<div class="avatar sm">+' + rest + '</div>' : '') + '</div>';
+  }
+  function badge(txt, cls) { return '<span class="badge ' + cls + '"><i></i>' + esc(txt) + '</span>'; }
+  function statusBadge(t) {
+    if (isLate(t)) return badge('متأخرة', 'b-late');
+    var s = ST[t.status] || ST.new;
+    return badge(s.l, s.c);
+  }
+  function prBadge(p) { var x = PR[p] || PR.med; return badge(x.l, x.c); }
+  function progressBar(v, cls) {
+    var c = cls || '';
+    if (!c && v < 35) c = 'bad';
+    return '<div class="progress ' + c + '"><i style="width:' + Math.max(0, Math.min(100, v)) + '%"></i></div>';
+  }
+  function toast(msg, kind) {
+    var el = document.createElement('div');
+    el.className = 'toast ' + (kind === 'err' ? 'err' : kind === 'warn' ? 'warn' : '');
+    el.innerHTML = ico(kind === 'err' ? 'alert' : kind === 'warn' ? 'alert' : 'check') + '<div>' + esc(msg) + '</div>';
+    toastRoot.appendChild(el);
+    setTimeout(function () {
+      el.style.transition = 'opacity .3s, transform .3s';
+      el.style.opacity = '0'; el.style.transform = 'translateX(-30px)';
+      setTimeout(function () { el.remove(); }, 320);
+    }, 3600);
+  }
+  function closeModal() { modalRoot.innerHTML = ''; document.body.style.overflow = ''; }
+  function openModal(opt) {
+    var size = opt.size ? ' ' + opt.size : '';
+    modalRoot.innerHTML =
+      '<div class="modal-back" data-act="backdrop">' +
+        '<div class="modal' + size + '" role="dialog" aria-modal="true">' +
+          '<div class="modal-head"><h3>' + esc(opt.title) + '</h3>' +
+            '<button class="modal-x" data-act="closeModal" aria-label="إغلاق">' + ico('x') + '</button></div>' +
+          '<div class="modal-body">' + opt.body + '</div>' +
+          (opt.foot ? '<div class="modal-foot">' + opt.foot + '</div>' : '') +
+        '</div>' +
+      '</div>';
+    document.body.style.overflow = 'hidden';
+    var first = modalRoot.querySelector('input,select,textarea,button');
+    if (first && opt.focus !== false) setTimeout(function () { try { first.focus(); } catch (e) {} }, 60);
+  }
+  function confirmBox(title, text, okLabel, onOk) {
+    openModal({
+      title: title,
+      size: 'sm',
+      body: '<p class="small muted" style="line-height:1.9">' + esc(text) + '</p>',
+      foot: '<button class="btn btn-danger" data-act="confirmOk">' + esc(okLabel || 'تأكيد') + '</button>' +
+            '<button class="btn btn-ghost" data-act="closeModal">إلغاء</button>'
+    });
+    modalRoot.querySelector('[data-act="confirmOk"]').onclick = function () { closeModal(); onOk(); };
+  }
+
+  /* ------------------------------ 8. الدخول ------------------------------ */
+  function authShell(inner) {
+    return `<div class="auth-shell">
+      <div class="auth-art">
+        <div class="lines"></div>
+        <div class="logo">${brandMark(44)}
+          <div class="logo-txt"><b>${esc(BRAND)}</b><span>${esc(TEAM)}</span></div>
+        </div>
+        <div class="auth-quote">
+          <h2>نظام إدارة واحد<br>لكل الفريق.</h2>
+          <p>المهام، المواعيد، الاجتماعات، ومتابعة الأداء — في لوحة واحدة بصلاحيات واضحة: الإدارة تُسند، المشرف يوزّع، والموظف ينفّذ.</p>
+          <div class="auth-marks">
+            <span class="chip">إدارة</span>
+            <span class="chip green">مشرف</span>
+            <span class="chip">موظف</span>
+          </div>
+        </div>
+        <div class="xs muted">${esc(BRAND)} Management System · v${esc(VER)}</div>
+      </div>
+      <div class="auth-side"><div class="auth-card">${inner}</div></div>
+    </div>`;
+  }
+
+  function loginCard(err) {
+    return `
+      <div class="row" style="margin-bottom:24px">${brandMark(34)}
+        <div class="logo-txt"><b style="font-size:15px">${esc(BRAND)}</b><span style="font-size:9px">${esc(TEAM)}</span></div>
+      </div>
+      <h1>دخول النظام</h1>
+      <p class="auth-note">أدخل رمز الدخول الخاص بك. الرمز يحدد حسابك وصلاحياتك داخل النظام.</p>
+      <form data-form="login" class="mt-3" novalidate>
+        <div class="field">
+          <label for="loginCode">رمز الدخول</label>
+          <input id="loginCode" name="code" class="input ltr" placeholder="••••" autocomplete="off" spellcheck="false"
+            style="text-align:center;letter-spacing:.4em;font-size:17px;min-height:48px;font-family:ui-monospace,Menlo,monospace">
+        </div>
+        ${err ? `<div class="err-msg mt-2">${esc(err)}</div>` : ''}
+        <button class="btn btn-primary btn-block mt-2" type="submit" style="min-height:48px">${ico('lock')} دخول</button>
+      </form>
+      <div class="auth-sep">تنبيه</div>
+      <div class="notice">
+        ${ico('shield')}
+        <div>الحسابات والرموز تُدار من داخل النظام. إذا لم يكن لديك رمز، تواصل مع الإدارة لإضافتك إلى الفريق.</div>
+      </div>`;
+  }
+
+  function chooserCard(users) {
+    return `
+      <h1>اختر الحساب</h1>
+      <p class="auth-note">رمز الدخول هذا مرتبط بأكثر من حساب. اختر الحساب الذي تريد الدخول به.</p>
+      <div class="stack mt-3">
+        ${users.map(function (u) {
+          return `<button class="btn btn-ghost btn-block" data-act="pick" data-id="${u.id}" style="justify-content:space-between;min-height:62px;padding:10px 14px">
+            <span class="row" style="gap:11px">
+              ${avatar(u, 'sm')}
+              <span style="text-align:start;line-height:1.4">
+                <b style="display:block;font-family:var(--font-h);font-size:13.5px">${esc(u.name)}</b>
+                <span class="xs muted">${ROLE[u.role]}${u.title ? ' · ' + esc(u.title) : ''}</span>
+              </span>
+            </span>
+            ${ico('right')}
+          </button>`;
+        }).join('')}
+      </div>
+      <button class="btn btn-sm btn-ghost mt-2" data-act="backLogin">${ico('left')} رجوع</button>`;
+  }
+
+  function doLogin(code) {
+    var c = String(code || '').trim().toLowerCase();
+    if (!c) return renderLogin('أدخل رمز الدخول أولًا.');
+    var matches = DB.users.filter(function (u) { return u.active && String(u.code).trim().toLowerCase() === c; });
+    if (!matches.length) return renderLogin('الرمز غير صحيح. تحقق من الرمز وحاول مرة أخرى.');
+    if (matches.length === 1) return enterAs(matches[0].id);
+    S.pending = matches;
+    app.innerHTML = authShell(chooserCard(matches));
+    document.title = 'اختيار الحساب — ' + BRAND;
+  }
+  function renderLogin(err) {
+    S.pending = null;
+    app.innerHTML = authShell(loginCard(err));
+    document.title = 'دخول — ' + BRAND;
+  }
+  function enterAs(id) {
+    var u = userById(id); if (!u) return;
+    S.uid = id; S.pending = null; S.view = 'dashboard'; S.f = { q: '', st: '', who: '', pr: '' };
+    persistSession();
+    log(id, 'سجّل الدخول', 'النظام');
+    save();
+    render();
+    toast('مرحبًا ' + u.name.split(' ')[0] + ' — تم تسجيل الدخول');
+  }
+  function logout() {
+    var u = me();
+    if (u) log(u.id, 'سجّل الخروج', 'النظام');
+    S.uid = null; persistSession(); save(); renderLogin();
+    toast('تم تسجيل الخروج');
+  }
+
+  /* ------------------------------ 9. الهيكل ------------------------------ */
+  function navItems() {
+    var items = [
+      { g: 'الرئيسية', list: [
+        { id: 'dashboard', l: 'لوحة التحكم', i: 'grid' },
+        { id: 'tasks', l: 'المهام', i: 'task' },
+        { id: 'orders', l: 'أوامر سريعة', i: 'zap', staff: true },
+        { id: 'meetings', l: 'الاجتماعات', i: 'cal' }
+      ]},
+      { g: 'الفريق', list: [
+        { id: 'team', l: 'الفريق', i: 'users' },
+        { id: 'reports', l: 'التقارير', i: 'chart' }
+      ]},
+      { g: 'النظام', list: [
+        { id: 'notifs', l: 'الإشعارات', i: 'bell', badge: unreadCount() },
+        { id: 'settings', l: 'الإعدادات', i: 'gear' }
+      ]}
+    ];
+    return items;
+  }
+
+  function sideBar(u) {
+    var openCnt = visibleTasks().filter(function (t) { return t.status !== 'done'; }).length;
+    var groups = navItems().map(function (grp) {
+      var links = grp.list.filter(function (it) { return !it.staff || isStaff(); }).map(function (it) {
+        var cnt = it.id === 'tasks' ? openCnt : (it.badge || 0);
+        return `<button class="side-link ${S.view === it.id ? 'on' : ''}" data-act="nav" data-view="${it.id}">
+          ${ico(it.i)}<span>${it.l}</span>${cnt ? `<span class="cnt">${cnt}</span>` : ''}</button>`;
+      }).join('');
+      return `<div class="side-group"><div class="side-label">${grp.g}</div>${links}</div>`;
+    }).join('');
+
+    return `<aside class="side ${S.sideOpen ? 'open' : ''}" id="side">
+      <div class="side-brand">
+        <div class="logo">${brandMark(38)}<div class="logo-txt"><b>${esc(BRAND)}</b><span>${esc(TEAM)}</span></div></div>
+        <div class="side-storm"><b>MANAGEMENT</b><span>v${esc(VER)}</span></div>
+      </div>
+      <div class="side-user">
+        ${avatar(u)}
+        <div class="grow"><div class="nm">${esc(u.name)}</div><div class="ps">${ROLE[u.role]}${u.title ? ' · ' + esc(u.title) : ''}</div></div>
+      </div>
+      <nav class="side-nav">${groups}</nav>
+      <div class="side-foot">
+        <button class="btn btn-ghost btn-sm" data-act="logout">${ico('logout')} تسجيل الخروج</button>
+      </div>
+    </aside>`;
+  }
+
+  function topBar(u) {
+    var today = new Date();
+    var dateTxt = DAYS[today.getDay()] + '، ' + today.getDate() + ' ' + MONTHS[today.getMonth()] + ' ' + today.getFullYear();
+    var n = unreadCount();
+    return `<header class="topbar">
+      <button class="icon-btn burger-side" data-act="toggleSide" aria-label="القائمة">${ico('menu')}</button>
+      <div class="search">
+        ${ico('search')}
+        <input id="gsearch" placeholder="ابحث في المهام…" value="${esc(S.f.q)}" aria-label="بحث">
+      </div>
+      <div class="grow"></div>
+      <div class="topbar-date">${ico('cal')} ${dateTxt}</div>
+      <button class="icon-btn" data-act="nav" data-view="notifs" aria-label="الإشعارات">${ico('bell')}${n ? '<span class="dot"></span>' : ''}</button>
+      <button class="topbar-user" data-act="nav" data-view="settings">
+        ${avatar(u, 'sm')}
+        <span class="txt" style="text-align:start"><span class="nm" style="display:block">${esc(u.name)}</span><span class="ps">${ROLE[u.role]}</span></span>
+      </button>
+    </header>`;
+  }
+
+  function render() {
+    var u = me();
+    if (!u) {
+      if (S.pending) { app.innerHTML = authShell(chooserCard(S.pending)); return; }
+      renderLogin(); return;
+    }
+    app.innerHTML = `<div class="shell">
+      ${sideBar(u)}
+      <div class="side-overlay ${S.sideOpen ? 'show' : ''}" data-act="toggleSide"></div>
+      <div class="main">${topBar(u)}<div class="page" id="page">${viewHTML()}</div></div>
+    </div>`;
+    document.title = BRAND + ' — ' + viewTitle();
+  }
+  function viewTitle() {
+    var map = { dashboard: 'لوحة التحكم', tasks: 'المهام', orders: 'أوامر سريعة', meetings: 'الاجتماعات', team: 'الفريق', reports: 'التقارير', notifs: 'الإشعارات', settings: 'الإعدادات' };
+    return map[S.view] || 'النظام';
+  }
+  function viewHTML() {
+    switch (S.view) {
+      case 'tasks': return tasksView();
+      case 'orders': return ordersView();
+      case 'meetings': return meetingsView();
+      case 'team': return teamView();
+      case 'reports': return reportsView();
+      case 'notifs': return notifsView();
+      case 'settings': return settingsView();
+      default: return dashboardView();
+    }
+  }
+  function pageHead(crumb, title, sub, actions) {
+    return `<div class="page-head">
+      <div><div class="crumb">${crumb}</div><h1>${title}</h1><p>${sub}</p></div>
+      <div class="toolbar no-print">${actions || ''}</div>
+    </div>`;
+  }
+
+  /* ------------------------------ 10. لوحة التحكم ------------------------------ */
+  function sortTasks(list) {
+    var order = { new: 0, progress: 1, review: 2, done: 3 };
+    return list.slice().sort(function (a, b) {
+      if ((a.status === 'done') !== (b.status === 'done')) return a.status === 'done' ? 1 : -1;
+      if (a.due && b.due && a.due !== b.due) return a.due < b.due ? -1 : 1;
+      if (a.due && !b.due) return -1;
+      if (!a.due && b.due) return 1;
+      return (b.at || 0) - (a.at || 0);
+    });
+  }
+
+  function dashboardView() {
+    var u = me();
+    var tasks = visibleTasks();
+    var open = tasks.filter(function (t) { return t.status !== 'done'; });
+    var late = tasks.filter(isLate);
+    var done = tasks.filter(function (t) { return t.status === 'done'; });
+    var myTasks = sortTasks(tasks.filter(function (t) { return t.assigneeId === u.id && t.status !== 'done'; }));
+    var mine = (u.role === 'employee' ? myTasks : sortTasks(open));
+    mine = mine.slice(0, 5);
+    var rate = tasks.length ? Math.round(done.length / tasks.length * 100) : 0;
+    var meetings = visibleMeetings().filter(function (m) { return m.date >= todayISO(); })
+      .sort(function (a, b) { return (a.date + a.time) < (b.date + b.time) ? -1 : 1; }).slice(0, 4);
+    var hour = new Date().getHours();
+    var greet = hour < 12 ? 'صباح الخير' : hour < 17 ? 'نهارك سعيد' : 'مساء الخير';
+
+    var parts = [
+      { k: 'new', v: tasks.filter(function (t) { return t.status === 'new' && !isLate(t); }).length, color: '#6FA8C7' },
+      { k: 'progress', v: tasks.filter(function (t) { return t.status === 'progress' && !isLate(t); }).length, color: '#00C878' },
+      { k: 'review', v: tasks.filter(function (t) { return t.status === 'review' && !isLate(t); }).length, color: '#E5A93D' },
+      { k: 'late', v: late.length, color: '#E45B5B' },
+      { k: 'done', v: done.length, color: '#2F6B52' }
+    ];
+
+    var actions = (canCreateTask() ? `<button class="btn btn-ghost btn-sm" data-act="taskNew">${ico('plus')} مهمة جديدة</button>` : '') +
+      (isStaff() ? `<button class="btn btn-primary btn-sm" data-act="nav" data-view="orders">${ico('zap')} أمر سريع</button>` : '');
+
+    return `${pageHead('الرئيسية / لوحة التحكم', greet + '، ' + esc(u.name.split(' ')[0]), fmtFull(todayISO()) + ' — هذا ملخص حركة الفريق الآن.', actions)}
+      <div class="kpi-grid">
+        ${kpi('task', open.length, 'مهام مفتوحة', (mine.length ? 'لديك ' + mine.length + ' مهمة' : 'لا مهام معلّقة عليك'), 'plain')}
+        ${kpi('clock', tasks.filter(function (t) { return t.status === 'progress'; }).length, 'قيد التنفيذ', 'على مستوى الفريق', '')}
+        ${kpi('alert', late.length, 'متأخرة', late.length ? 'تحتاج متابعة فورية' : 'لا تأخير', late.length ? 'bad' : '')}
+        ${kpi('check', done.length, 'مكتملة', 'نسبة الإنجاز ' + rate + '%', '')}
+        ${kpi('cal', meetings.length, 'مواعيد قادمة', 'خلال الأيام القادمة', 'plain')}
+      </div>
+
+      <div class="split mt-2">
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">${ico('chart')} توزيع المهام</div>
+            <div class="panel-sub">${tasks.length} مهمة إجمالًا</div>
+          </div>
+          <div class="panel-body">
+            <div class="donut-wrap">
+              ${donut(parts, tasks.length, 'مهمة')}
+              <div class="legend">
+                ${parts.map(function (p) {
+                  return `<div><i style="background:${p.color}"></i>${p.k === 'late' ? 'متأخرة' : ST[p.k].l}<b>${p.v}</b></div>`;
+                }).join('')}
+              </div>
+            </div>
+            <div class="divider mt-3"></div>
+            <div class="between mt-2 small">
+              <span class="muted">نسبة الإنجاز الكلية</span>
+              <b class="green">${rate}%</b>
+            </div>
+            <div class="mt-1">${progressBar(rate, '')}</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">${ico('users')} تحميل الفريق</div><div class="panel-sub">مهام مفتوحة</div></div>
+          <div class="panel-body">
+            ${teamLoadBars()}
+          </div>
+        </div>
+      </div>
+
+      <div class="split-eq mt-2">
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">${ico('task')} ${u.role === 'employee' ? 'مهامي القادمة' : 'مهام قريبة الاستحقاق'}</div>
+            <button class="btn btn-sm btn-ghost no-print" data-act="nav" data-view="tasks">عرض الكل ${ico('left')}</button>
+          </div>
+          <div class="panel-body flush">
+            ${(mine.length ? mine : sortTasks(open).slice(0, 5)).map(function (t) {
+              if (!t) return '';
+              return `<div class="list-item" data-act="taskOpen" data-id="${t.id}" style="cursor:pointer">
+                <div class="grow">
+                  <div class="tt">${esc(t.title)}</div>
+                  <div class="ss">${esc(nameOf(t.assigneeId))} · استحقاق ${fmtDate(t.due)}</div>
+                </div>
+                ${statusBadge(t)}
+              </div>`;
+            }).join('') || emptyBox('لا مهام حاليًا')}
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">${ico('cal')} المواعيد القادمة</div>
+            <button class="btn btn-sm btn-ghost no-print" data-act="nav" data-view="meetings">التقويم ${ico('left')}</button>
+          </div>
+          <div class="panel-body flush">
+            ${meetings.length ? meetings.map(meetRow).join('') : emptyBox('لا مواعيد قادمة')}
+          </div>
+        </div>
+      </div>
+
+      <div class="panel mt-2">
+        <div class="panel-head"><div class="panel-title">${ico('board')} النشاط الأخير</div><div class="panel-sub">آخر ${Math.min(6, DB.activity.length)} عمليات</div></div>
+        <div class="panel-body flush">
+          ${DB.activity.slice(0, 6).map(function (a) {
+            var actor = userById(a.actorId);
+            return `<div class="list-item">
+              ${avatar(actor, 'sm')}
+              <div class="grow">
+                <div class="tt"><b>${esc(actor ? actor.name : '—')}</b> ${esc(a.action)}</div>
+                <div class="ss">${esc(a.target || '')} · ${fromNow(a.at)}</div>
+              </div>
+            </div>`;
+          }).join('') || emptyBox('لا نشاط بعد')}
+        </div>
+      </div>`;
+  }
+
+  function kpi(icon, val, lbl, sub, tone) {
+    return `<div class="kpi">
+      <div class="ico ${tone || ''}">${ico(icon)}</div>
+      <div class="grow"><div class="val">${val}</div><div class="lbl">${esc(lbl)}</div>${sub ? `<div class="sub">${esc(sub)}</div>` : ''}</div>
+    </div>`;
+  }
+  function donut(parts, total, label) {
+    var acc = 0, segs = [];
+    if (total > 0) {
+      parts.forEach(function (p) {
+        if (!p.v) return;
+        var from = acc / total * 360, to = (acc + p.v) / total * 360;
+        segs.push(p.color + ' ' + from.toFixed(2) + 'deg ' + to.toFixed(2) + 'deg');
+        acc += p.v;
+      });
+    }
+    var bg = segs.length ? 'conic-gradient(' + segs.join(',') + ')' : '#1A211D';
+    return `<div class="donut" style="background:radial-gradient(circle,#111512 0 46%,transparent 47%),${bg}">
+      <div class="donut-txt"><b>${total}</b><span>${esc(label)}</span></div></div>`;
+  }
+  function teamLoadBars() {
+    var staff = DB.users.filter(function (u) { return u.active; });
+    var max = 1;
+    var rows = staff.map(function (u) {
+      var open = DB.tasks.filter(function (t) { return t.assigneeId === u.id && t.status !== 'done'; }).length;
+      if (open > max) max = open;
+      return { u: u, n: open };
+    });
+    rows.sort(function (a, b) { return b.n - a.n; });
+    return `<div class="bars">${rows.map(function (r) {
+      return `<div class="b-row"><span>${esc(r.u.name)}</span>
+        <div class="b-track"><div class="b-fill" style="width:${Math.round(r.n / max * 100)}%"></div></div>
+        <b>${r.n}</b></div>`;
+    }).join('')}</div>`;
+  }
+  function emptyBox(txt) {
+    return `<div class="empty">${ico('board')}<div>${esc(txt)}</div></div>`;
+  }
+  function meetRow(m) {
+    var d = parseISO(m.date);
+    return `<div class="meet-item" data-act="meetOpen" data-id="${m.id}" style="cursor:pointer">
+      <div class="meet-date"><b>${d.getDate()}</b><span>${MONTHS_SHORT[d.getMonth()]}</span></div>
+      <div class="meet-body">
+        <h4>${esc(m.title)}</h4>
+        <div class="m">${ico('clock')} ${esc(m.time)} · ${m.dur} دقيقة ${m.place ? '· ' + esc(m.place) : ''}</div>
+      </div>
+      <div class="avstack" style="align-self:center">${avstack(m.attendees, 3)}</div>
+    </div>`;
+  }
+
+  /* ------------------------------ 11. المهام ------------------------------ */
+  function dueMeta(t) {
+    if (t.status === 'done') return { txt: 'مكتملة', cls: 'green' };
+    var dl = daysLeft(t.due);
+    if (dl === null) return { txt: 'بدون تاريخ', cls: 'muted' };
+    if (dl < 0) return { txt: 'متأخرة ' + Math.abs(dl) + ' يوم', cls: 'danger' };
+    if (dl === 0) return { txt: 'تستحق اليوم', cls: 'warnc' };
+    if (dl === 1) return { txt: 'تستحق غدًا', cls: 'muted' };
+    return { txt: 'بعد ' + dl + ' يوم', cls: 'muted' };
+  }
+
+  function filterTasks(list) {
+    var f = S.f;
+    return sortTasks(list.filter(function (t) {
+      if (f.st) {
+        if (f.st === 'late') { if (!isLate(t)) return false; }
+        else if (t.status !== f.st) return false;
+      }
+      if (f.who && t.assigneeId !== f.who) return false;
+      if (f.pr && t.priority !== f.pr) return false;
+      if (f.q) {
+        var hay = (t.title + ' ' + (t.desc || '') + ' ' + (t.tags || []).join(' ')).toLowerCase();
+        if (hay.indexOf(String(f.q).toLowerCase()) < 0) return false;
+      }
+      return true;
+    }));
+  }
+
+  function taskRows(list) {
+    if (!list.length) {
+      return `<tr><td colspan="7"><div class="tbl-empty">لا توجد مهام مطابقة. جرّب تغيير الفلاتر أو أنشئ مهمة جديدة.</div></td></tr>`;
+    }
+    return list.map(function (t) {
+      var a = userById(t.assigneeId);
+      var d = dueMeta(t);
+      return `<tr data-act="taskOpen" data-id="${t.id}">
+        <td>
+          <div class="task-line">
+            <div class="av" data-act="taskOpen" data-id="${t.id}" style="cursor:pointer">${avatar(a, 'sm')}</div>
+            <div class="grow">
+              <span class="task-title" data-act="taskOpen" data-id="${t.id}" style="cursor:pointer">${esc(t.title)}</span>
+              <div class="task-tags">${(t.tags || []).slice(0, 3).map(function (g) { return '<span>' + esc(g) + '</span>'; }).join('')}</div>
+            </div>
+          </div>
+        </td>
+        <td><span class="small">${esc(a ? a.name : '—')}</span><div class="t-sub">${a ? ROLE[a.role] : ''}</div></td>
+        <td>${statusBadge(t)}</td>
+        <td>${prBadge(t.priority)}</td>
+        <td><span class="small">${fmtDate(t.due)}</span><div class="t-sub ${d.cls}">${d.txt}</div></td>
+        <td style="min-width:104px">
+          <div class="row" style="gap:7px">${progressBar(t.progress)}<span class="pct">${t.progress}%</span></div>
+        </td>
+        <td>
+          <div class="tbl-actions">
+            ${(t.status !== 'done' && canEditTask(t))
+              ? `<button class="btn-icon btn" data-act="taskDone" data-id="${t.id}" title="إكمال" style="width:30px;height:30px;min-height:30px">${ico('check')}</button>`
+              : ''}
+            ${(canCreateTask() && canEditTask(t)) ? `<button class="btn-icon btn" data-act="taskEdit" data-id="${t.id}" title="تعديل" style="width:30px;height:30px;min-height:30px">${ico('edit')}</button>` : ''}
+            ${canDeleteTask(t) ? `<button class="btn-icon btn" data-act="taskDel" data-id="${t.id}" title="حذف" style="width:30px;height:30px;min-height:30px">${ico('trash')}</button>` : ''}
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  function tasksView() {
+    var all = visibleTasks();
+    var list = filterTasks(all);
+    var staff = isStaff();
+    var counts = {
+      '': all.length,
+      new: all.filter(function (t) { return t.status === 'new' && !isLate(t); }).length,
+      progress: all.filter(function (t) { return t.status === 'progress' && !isLate(t); }).length,
+      review: all.filter(function (t) { return t.status === 'review' && !isLate(t); }).length,
+      late: all.filter(isLate).length,
+      done: all.filter(function (t) { return t.status === 'done'; }).length
+    };
+    var tabs = [['', 'الكل'], ['new', 'جديدة'], ['progress', 'قيد التنفيذ'], ['review', 'مراجعة'], ['late', 'متأخرة'], ['done', 'مكتملة']];
+
+    return `${pageHead('الرئيسية / المهام', 'المهام',
+      (staff ? 'إسناد ومتابعة مهام الفريق — الإدارة والمشرف يمكنهما إنشاء المهام.' : 'مهامك المسندة إليك ومتابعة تقدّمها.'),
+      (staff ? `<button class="btn btn-ghost btn-sm" data-act="nav" data-view="orders">${ico('zap')} أمر سريع</button>` : '') +
+      (canCreateTask() ? `<button class="btn btn-primary btn-sm" data-act="taskNew">${ico('plus')} مهمة جديدة</button>` : ''))}
+
+      <div class="panel">
+        <div class="tabs" style="padding:0 8px">
+          ${tabs.map(function (tb) {
+            return `<button class="tab ${S.f.st === tb[0] ? 'on' : ''}" data-act="fst" data-v="${tb[0]}">${tb[1]}<span class="n">${counts[tb[0]]}</span></button>`;
+          }).join('')}
+        </div>
+        <div class="panel-head" style="border-top:0">
+          <div class="toolbar">
+            <div class="search-i">
+              ${ico('search')}
+              <input class="input" id="taskSearch" placeholder="بحث بالعنوان أو الوسم…" value="${esc(S.f.q)}">
+            </div>
+            <select class="select" id="fWho">
+              <option value="">كل الأعضاء</option>
+              ${DB.users.filter(function (u) { return u.active; }).map(function (u) {
+                return `<option value="${u.id}" ${S.f.who === u.id ? 'selected' : ''}>${esc(u.name)}</option>`;
+              }).join('')}
+            </select>
+            <select class="select" id="fPr">
+              <option value="">كل الأولويات</option>
+              ${Object.keys(PR).map(function (k) {
+                return `<option value="${k}" ${S.f.pr === k ? 'selected' : ''}>${PR[k].l}</option>`;
+              }).join('')}
+            </select>
+            ${(S.f.q || S.f.who || S.f.pr || S.f.st) ? `<button class="btn btn-sm btn-ghost" data-act="clearFilters">${ico('x')} مسح</button>` : ''}
+          </div>
+          <div class="panel-sub" id="taskCount">${list.length} من ${all.length} مهمة</div>
+        </div>
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr>
+              <th>المهمة</th><th>المسند إليه</th><th>الحالة</th><th>الأولوية</th><th>الاستحقاق</th><th>التقدّم</th><th></th>
+            </tr></thead>
+            <tbody id="taskRows">${taskRows(list)}</tbody>
+          </table>
+        </div>
+      </div>`;
+  }
+
+  function refreshTaskTable() {
+    var tb = document.getElementById('taskRows');
+    if (!tb) return;
+    var all = visibleTasks();
+    tb.innerHTML = taskRows(filterTasks(all));
+    var c = document.getElementById('taskCount');
+    if (c) c.textContent = filterTasks(all).length + ' من ' + all.length + ' مهمة';
+  }
+
+  /* ------------------------------ 12. نوافذ المهام ------------------------------ */
+  function assigneeOptions(selected) {
+    var list = assignables();
+    var groups = { admin: [], supervisor: [], employee: [] };
+    list.forEach(function (u) { (groups[u.role] || groups.employee).push(u); });
+    return Object.keys(groups).map(function (r) {
+      if (!groups[r].length) return '';
+      return `<optgroup label="${ROLE[r]}">` + groups[r].map(function (u) {
+        return `<option value="${u.id}" ${selected === u.id ? 'selected' : ''}>${esc(u.name)}${u.title ? ' — ' + esc(u.title) : ''}</option>`;
+      }).join('') + '</optgroup>';
+    }).join('');
+  }
+
+  function taskModal(task) {
+    var t = task || null;
+    var isEdit = !!t;
+    var defDue = addDays(2);
+    openModal({
+      title: isEdit ? 'تعديل المهمة' : 'مهمة جديدة',
+      body: `<form data-form="task" data-id="${t ? t.id : ''}">
+        <div class="form-grid">
+          <div class="field span-2">
+            <label for="tTitle">عنوان المهمة <em>*</em></label>
+            <input id="tTitle" name="title" class="input" required maxlength="120" value="${t ? esc(t.title) : ''}" placeholder="مثال: تجهيز عرض تقديمي لعميل جديد">
+          </div>
+          <div class="field span-2">
+            <label for="tDesc">الوصف</label>
+            <textarea id="tDesc" name="desc" placeholder="تفاصيل المهمة، المتطلبات، ونطاق العمل…">${t ? esc(t.desc || '') : ''}</textarea>
+          </div>
+          <div class="field">
+            <label for="tAssignee">المسند إليه <em>*</em></label>
+            <select id="tAssignee" name="assigneeId" class="select" required>
+              ${assigneeOptions(t ? t.assigneeId : (assignables()[0] || {}).id)}
+            </select>
+          </div>
+          <div class="field">
+            <label for="tPriority">الأولوية</label>
+            <select id="tPriority" name="priority" class="select">
+              ${Object.keys(PR).map(function (k) {
+                return `<option value="${k}" ${(t ? t.priority : 'med') === k ? 'selected' : ''}>${PR[k].l}</option>`;
+              }).join('')}
+            </select>
+          </div>
+          <div class="field">
+            <label for="tDue">تاريخ الاستحقاق</label>
+            <input id="tDue" name="due" class="input" type="date" value="${t ? (t.due || '') : defDue}">
+          </div>
+          <div class="field">
+            <label for="tStatus">الحالة</label>
+            <select id="tStatus" name="status" class="select">
+              ${Object.keys(ST).map(function (k) {
+                return `<option value="${k}" ${(t ? t.status : 'new') === k ? 'selected' : ''}>${ST[k].l}</option>`;
+              }).join('')}
+            </select>
+          </div>
+          <div class="field span-2">
+            <label for="tTags">الوسوم <span class="hint">(افصل بينها بفاصلة)</span></label>
+            <input id="tTags" name="tags" class="input" value="${t ? esc((t.tags || []).join(', ')) : ''}" placeholder="تسويق, تصميم">
+          </div>
+        </div>
+        <div class="notice green mt-2">${ico('bell')}<div>سيصل إشعار فوري للموظف المسند إليه عند الحفظ.</div></div>
+        <div class="form-actions">
+          <button class="btn btn-primary" type="submit">${isEdit ? 'حفظ التعديلات' : 'إنشاء المهمة'}</button>
+          <button class="btn btn-ghost" type="button" data-act="closeModal">إلغاء</button>
+        </div>
+      </form>`
+    });
+  }
+
+  function taskDetail(id) {
+    var t = DB.tasks.filter(function (x) { return x.id === id; })[0];
+    if (!t) return toast('المهمة غير موجودة', 'err');
+    var a = userById(t.assigneeId), cr = userById(t.createdBy);
+    var editable = canEditTask(t);
+    var canStatus = editable || (me() && me().role === 'employee' && t.assigneeId === me().id);
+    var d = dueMeta(t);
+
+    openModal({
+      title: 'تفاصيل المهمة',
+      size: 'wide',
+      body: `
+        <div class="between" style="align-items:flex-start;gap:14px;flex-wrap:wrap">
+          <div style="min-width:0">
+            <h3 style="font-size:18px;margin-bottom:6px">${esc(t.title)}</h3>
+            <div class="row" style="gap:6px;flex-wrap:wrap">${statusBadge(t)}${prBadge(t.priority)}
+              <span class="chip">${fmtDate(t.due)}</span>
+              ${(t.tags || []).map(function (g) { return '<span class="chip">' + esc(g) + '</span>'; }).join('')}
+            </div>
+          </div>
+          <div style="text-align:center;min-width:74px">
+            <div style="font-family:var(--font-h);font-size:24px;font-weight:800" class="${d.cls === 'danger' ? 'danger' : ''}">${t.progress}%</div>
+            <div class="xs muted">الإنجاز</div>
+          </div>
+        </div>
+
+        <div class="mt-3">${progressBar(t.progress, d.cls === 'danger' ? 'bad' : '')}</div>
+
+        ${t.desc ? `<div class="panel mt-3"><div class="panel-body" style="font-size:13.5px;line-height:1.95;color:#D5DCD7;white-space:pre-wrap">${esc(t.desc)}</div></div>` : ''}
+
+        <div class="mt-3">
+          <dl class="kv">
+            <dt>المسند إليه</dt><dd class="row" style="gap:7px">${avatar(a, 'sm')} ${esc(a ? a.name : '—')}</dd>
+            <dt>أنشأها</dt><dd>${esc(cr ? cr.name : '—')}</dd>
+            <dt>تاريخ الإنشاء</dt><dd>${fmtFull(iso(new Date(t.at || Date.now())))}</dd>
+            <dt>الاستحقاق</dt><dd>${fmtFull(t.due)} · <span class="${d.cls}">${d.txt}</span></dd>
+          </dl>
+        </div>
+
+        ${canStatus ? `<div class="mt-3">
+          <div class="xs muted mb-1">تحديث الحالة</div>
+          <div class="row" style="gap:6px;flex-wrap:wrap">
+            ${Object.keys(ST).map(function (k) {
+              return `<button class="btn btn-sm ${t.status === k ? 'btn-soft' : 'btn-ghost'}" data-act="setStatus" data-id="${t.id}" data-v="${k}">${ST[k].l}</button>`;
+            }).join('')}
+          </div>
+          <div class="field mt-2">
+            <label>نسبة الإنجاز — <b id="prgVal">${t.progress}%</b></label>
+            <input type="range" min="0" max="100" step="5" value="${t.progress}" id="prgRange" data-id="${t.id}" style="width:100%;accent-color:#00C878">
+          </div>
+        </div>` : ''}
+
+        <div class="mt-3">
+          <div class="between mb-1"><b class="small">التعليقات (${(t.comments || []).length})</b></div>
+          <div>${(t.comments || []).map(function (c) {
+            var u = userById(c.by);
+            return `<div class="comment">${avatar(u, 'sm')}
+              <div class="grow"><div class="xs" style="color:#B4BEB8"><b>${esc(u ? u.name : '—')}</b> · ${fromNow(c.at)}</div>
+              <div class="bd">${esc(c.text)}</div></div></div>`;
+          }).join('') || '<div class="hint">لا تعليقات بعد.</div>'}</div>
+          <form data-form="comment" data-id="${t.id}" class="mt-2">
+            <div class="row" style="align-items:flex-end;gap:8px">
+              <div class="field grow"><textarea name="text" placeholder="اكتب تعليقًا أو تحديثًا…" style="min-height:60px"></textarea></div>
+              <button class="btn btn-soft btn-sm" type="submit">${ico('msg')} إرسال</button>
+            </div>
+          </form>
+        </div>`,
+      foot: `${canEditTask(t) ? `<button class="btn btn-ghost btn-sm" data-act="taskEdit" data-id="${t.id}">${ico('edit')} تعديل</button>` : ''}
+        ${canDeleteTask(t) ? `<button class="btn btn-danger btn-sm" data-act="taskDel" data-id="${t.id}">${ico('trash')} حذف</button>` : ''}
+        <div class="grow"></div>
+        <button class="btn btn-ghost btn-sm" data-act="closeModal">إغلاق</button>`
+    });
+
+    var range = document.getElementById('prgRange');
+    if (range) {
+      range.addEventListener('input', function () {
+        var v = document.getElementById('prgVal');
+        if (v) v.textContent = range.value + '%';
+      });
+      range.addEventListener('change', function () {
+        var task = DB.tasks.filter(function (x) { return x.id === range.dataset.id; })[0];
+        if (!task) return;
+        task.progress = Number(range.value);
+        if (task.progress === 100) task.status = 'done';
+        else if (task.progress > 0 && task.status === 'new') task.status = 'progress';
+        log(S.uid, 'حدّث تقدّم مهمة', task.title);
+        save(); closeModal(); render(); toast('تم تحديث نسبة الإنجاز');
+      });
+    }
+  }
+
+  /* ------------------------------ 13. الأوامر السريعة ------------------------------ */
+  function ordersView() {
+    if (!isStaff()) return `<div class="panel"><div class="empty">${ico('lock')}<div>هذه الصفحة متاحة للإدارة والمشرف فقط.</div></div></div>`;
+    var emps = DB.users.filter(function (u) { return u.active && u.role === 'employee'; });
+    var recent = DB.tasks.filter(function (t) { return t.createdBy === me().id; })
+      .sort(function (a, b) { return (b.at || 0) - (a.at || 0); }).slice(0, 8);
+
+    return `${pageHead('الرئيسية / أوامر سريعة', 'أوامر سريعة',
+      'أرسل مهمة لموظف أو أكثر في ثوانٍ — اكتب الأمر، اختر المنفّذ، وحدّد الأولوية والمهلة.', '')}
+
+      <div class="order-hero">
+        <div class="between" style="align-items:flex-start">
+          <div>
+            <h2>${ico('zap')} أمر مهمة فوري</h2>
+            <p>يُنشئ النظام مهمة منفصلة لكل موظف تختاره، ويُرسل له إشعارًا مباشرًا. مناسب للأوامر اليومية السريعة.</p>
+          </div>
+          <span class="badge b-green"><i></i>${emps.length} موظف متاح</span>
+        </div>
+
+        <form data-form="order" class="mt-3">
+          <div class="field">
+            <label for="ordTitle">نص الأمر <em>*</em></label>
+            <input id="ordTitle" name="title" class="input" placeholder="مثال: جهّز تقرير العملاء قبل نهاية اليوم" maxlength="120"
+              style="min-height:46px;font-size:14.5px">
+          </div>
+
+          <div class="field mt-2">
+            <label>المنفّذون <em>*</em></label>
+            <div class="pick-row">
+              ${emps.map(function (u) {
+                return `<label class="pick"><input type="checkbox" name="who" value="${u.id}" class="sr-only">
+                  ${avatar(u, 'sm')}<span>${esc(u.name)}</span></label>`;
+              }).join('') || '<span class="hint">لا يوجد موظفون نشطون.</span>'}
+            </div>
+            <div class="hint">يمكنك اختيار أكثر من موظف — تُنشأ مهمة لكل واحد منهم.</div>
+          </div>
+
+          <div class="form-grid mt-2">
+            <div class="field">
+              <label>الأولوية</label>
+              <div class="seg" id="ordPrio">
+                <button type="button" data-v="low">منخفضة</button>
+                <button type="button" data-v="med" class="on">متوسطة</button>
+                <button type="button" data-v="high">عالية</button>
+                <button type="button" data-v="urg">عاجلة</button>
+              </div>
+              <input type="hidden" name="priority" value="med">
+            </div>
+            <div class="field">
+              <label>المهلة</label>
+              <div class="seg" id="ordDue">
+                <button type="button" data-v="0">اليوم</button>
+                <button type="button" data-v="1" class="on">غدًا</button>
+                <button type="button" data-v="3">3 أيام</button>
+                <button type="button" data-v="7">أسبوع</button>
+              </div>
+              <input type="hidden" name="dueIn" value="1">
+            </div>
+          </div>
+
+          <div class="field mt-2">
+            <label for="ordNote">ملاحظة (اختياري)</label>
+            <input id="ordNote" name="note" class="input" placeholder="تفاصيل مختصرة تُضاف لوصف المهمة">
+          </div>
+
+          <div class="form-actions">
+            <button class="btn btn-primary" type="submit">${ico('zap')} إرسال الأمر</button>
+            <button class="btn btn-ghost" type="reset" data-act="resetOrder">تفريغ</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="split mt-2">
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">${ico('clock')} آخر الأوامر المرسلة</div><div class="panel-sub">بواسطتك</div></div>
+          <div class="panel-body flush">
+            ${recent.length ? recent.map(function (t) {
+              return `<div class="list-item" data-act="taskOpen" data-id="${t.id}" style="cursor:pointer">
+                <div class="grow"><div class="tt">${esc(t.title)}</div>
+                <div class="ss">${esc(nameOf(t.assigneeId))} · ${fromNow(t.at || Date.now())} · استحقاق ${fmtDate(t.due)}</div></div>
+                ${statusBadge(t)}
+              </div>`;
+            }).join('') : emptyBox('لم ترسل أوامر بعد')}
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">${ico('grid')} كيف يعمل؟</div></div>
+          <div class="panel-body">
+            <div class="step"><div class="n">1</div><div><b>اكتب الأمر</b><p>جملة واحدة واضحة تحدد المطلوب.</p></div></div>
+            <div class="step"><div class="n">2</div><div><b>اختر المنفّذين</b><p>موظف واحد أو أكثر في نفس الوقت.</p></div></div>
+            <div class="step"><div class="n">3</div><div><b>حدّد الأولوية والمهلة</b><p>تظهر المهمة فورًا في لوحة الموظف مع إشعار.</p></div></div>
+            <div class="step"><div class="n">4</div><div><b>تابع التنفيذ</b><p>من صفحة المهام أو التقارير، وحدّث الحالة عند الحاجة.</p></div></div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  /* ------------------------------ 14. الاجتماعات ------------------------------ */
+  function meetingsOn(dateStr) {
+    return visibleMeetings().filter(function (m) { return m.date === dateStr; })
+      .sort(function (a, b) { return a.time < b.time ? -1 : 1; });
+  }
+
+  function calendarHTML() {
+    var ref = S.calRef, y = ref.getFullYear(), m = ref.getMonth();
+    var firstDow = new Date(y, m, 1).getDay();
+    var dim = new Date(y, m + 1, 0).getDate();
+    var prevDim = new Date(y, m, 0).getDate();
+    var cells = [];
+    var i, d, dateStr, out;
+
+    for (i = firstDow - 1; i >= 0; i--) {
+      d = prevDim - i; out = true;
+      dateStr = iso(new Date(y, m - 1, d));
+      cells.push({ d: d, out: true, date: dateStr });
+    }
+    for (d = 1; d <= dim; d++) {
+      cells.push({ d: d, out: false, date: iso(new Date(y, m, d)) });
+    }
+    while (cells.length % 7 !== 0 || cells.length < 35) {
+      var nd = cells.length - (firstDow + dim) + 1;
+      cells.push({ d: nd, out: true, date: iso(new Date(y, m + 1, nd)) });
+    }
+
+    return `<div class="panel">
+      <div class="panel-head">
+        <div class="panel-title">${ico('cal')} ${MONTHS[m]} ${y}</div>
+        <div class="row no-print" style="gap:6px">
+          <button class="btn-icon btn" data-act="calPrev" title="السابق">${ico('right')}</button>
+          <button class="btn btn-sm btn-ghost" data-act="calToday">اليوم</button>
+          <button class="btn-icon btn" data-act="calNext" title="التالي">${ico('left')}</button>
+        </div>
+      </div>
+      <div class="panel-body flush">
+        <div class="cal-grid" style="border:0;border-radius:0">
+          ${DAYS_SHORT.map(function (x) { return '<div class="cal-dow">' + x + '</div>'; }).join('')}
+          ${cells.map(function (c) {
+            var evs = meetingsOn(c.date);
+            return `<div class="cal-cell ${c.out ? 'out' : ''} ${c.date === todayISO() ? 'today' : ''}"
+              data-act="dayClick" data-date="${c.date}" style="cursor:pointer">
+              <span class="cal-num">${c.d}</span>
+              ${evs.slice(0, 2).map(function (e) {
+                return `<span class="cal-ev ${e.type === 'meeting' ? '' : 'gray'}" title="${esc(e.title)}">${esc(e.time)} ${esc(e.title)}</span>`;
+              }).join('')}
+              ${evs.length > 2 ? `<span class="cal-ev">+${evs.length - 2} أخرى</span>` : ''}
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function meetingsView() {
+    var all = visibleMeetings();
+    var upcoming = all.filter(function (m) { return m.date >= todayISO(); })
+      .sort(function (a, b) { return (a.date + a.time) < (b.date + b.time) ? -1 : 1; });
+    var todayList = meetingsOn(todayISO());
+    var byType = {};
+    all.forEach(function (m) { byType[m.type] = (byType[m.type] || 0) + 1; });
+
+    return `${pageHead('الرئيسية / الاجتماعات', 'الاجتماعات والمواعيد',
+      'تقويم موحّد لاجتماعات الفريق والمواعيد والتسليمات، مع دعوة الأعضاء ومتابعة الحضور.',
+      isStaff() ? `<button class="btn btn-primary btn-sm" data-act="meetNew">${ico('plus')} اجتماع جديد</button>` : '')}
+
+      ${calendarHTML()}
+
+      <div class="split mt-2">
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">${ico('clock')} القادم</div><div class="panel-sub">${upcoming.length} موعد</div></div>
+          <div class="panel-body flush">
+            ${upcoming.length ? upcoming.slice(0, 7).map(meetRow).join('') : emptyBox('لا مواعيد قادمة')}
+          </div>
+        </div>
+        <div class="stack">
+          <div class="panel">
+            <div class="panel-head"><div class="panel-title">${ico('target')} اليوم</div><div class="panel-sub">${fmtDate(todayISO())}</div></div>
+            <div class="panel-body flush">
+              ${todayList.length ? todayList.map(function (m) {
+                return `<div class="list-item"><div class="grow"><div class="tt">${esc(m.title)}</div>
+                  <div class="ss">${esc(m.time)} · ${esc(m.place || '—')}</div></div>
+                  ${mtBadge(m.type)}</div>`;
+              }).join('') : emptyBox('لا مواعيد اليوم')}
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><div class="panel-title">${ico('chart')} التوزيع</div></div>
+            <div class="panel-body">
+              <div class="bars">
+                ${Object.keys(MT).map(function (k) {
+                  var n = byType[k] || 0;
+                  return `<div class="b-row"><span>${MT[k].l}</span>
+                    <div class="b-track"><div class="b-fill" style="width:${all.length ? Math.round(n / all.length * 100) : 0}%"></div></div>
+                    <b>${n}</b></div>`;
+                }).join('')}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function mtBadge(t) {
+    var x = MT[t] || MT.meeting;
+    return badge(x.l, x.c);
+  }
+
+  function meetingModal(meet, presetDate) {
+    var m = meet || null;
+    var isEdit = !!m;
+    if (!isStaff()) return toast('غير مصرح', 'err');
+    var defDate = presetDate || (m ? m.date : todayISO());
+    var attend = m ? m.attendees || [] : DB.users.filter(function (u) { return u.active; }).map(function (u) { return u.id; });
+
+    openModal({
+      title: isEdit ? 'تعديل الاجتماع' : 'اجتماع / موعد جديد',
+      body: `<form data-form="meet" data-id="${m ? m.id : ''}">
+        <div class="form-grid">
+          <div class="field span-2">
+            <label for="mTitle">العنوان <em>*</em></label>
+            <input id="mTitle" name="title" class="input" required maxlength="120" value="${m ? esc(m.title) : ''}" placeholder="مثال: اجتماع الفريق الأسبوعي">
+          </div>
+          <div class="field">
+            <label for="mType">النوع</label>
+            <select id="mType" name="type" class="select">
+              ${Object.keys(MT).map(function (k) {
+                return `<option value="${k}" ${(m ? m.type : 'meeting') === k ? 'selected' : ''}>${MT[k].l}</option>`;
+              }).join('')}
+            </select>
+          </div>
+          <div class="field">
+            <label for="mDate">التاريخ <em>*</em></label>
+            <input id="mDate" name="date" class="input" type="date" required value="${esc(defDate)}">
+          </div>
+          <div class="field">
+            <label for="mTime">الوقت <em>*</em></label>
+            <input id="mTime" name="time" class="input" type="time" required value="${m ? esc(m.time) : '17:00'}">
+          </div>
+          <div class="field">
+            <label for="mDur">المدة (دقيقة)</label>
+            <input id="mDur" name="dur" class="input" type="number" min="15" step="5" value="${m ? m.dur : 45}">
+          </div>
+          <div class="field">
+            <label for="mPlace">المكان</label>
+            <input id="mPlace" name="place" class="input" value="${m ? esc(m.place || '') : 'Google Meet'}" placeholder="قاعة المكتب أو رابط الاجتماع">
+          </div>
+          <div class="field">
+            <label for="mLink">الرابط (اختياري)</label>
+            <input id="mLink" name="link" class="input ltr" value="${m ? esc(m.link || '') : ''}" placeholder="https://meet.google.com/...">
+          </div>
+          <div class="field span-2">
+            <label>المدعوون</label>
+            <div class="pick-row">
+              ${DB.users.filter(function (u) { return u.active; }).map(function (u) {
+                return `<label class="pick ${attend.indexOf(u.id) > -1 ? 'on' : ''}"><input type="checkbox" name="who" value="${u.id}" class="sr-only" ${attend.indexOf(u.id) > -1 ? 'checked' : ''}>
+                  ${avatar(u, 'sm')}<span>${esc(u.name)}</span></label>`;
+              }).join('')}
+            </div>
+          </div>
+          <div class="field span-2">
+            <label for="mAgenda">جدول الأعمال / ملاحظات</label>
+            <textarea id="mAgenda" name="agenda" placeholder="النقاط التي سيتم مناقشتها…">${m ? esc(m.agenda || '') : ''}</textarea>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" type="submit">${isEdit ? 'حفظ التعديلات' : 'جدولة الاجتماع'}</button>
+          <button class="btn btn-ghost" type="button" data-act="closeModal">إلغاء</button>
+        </div>
+      </form>`
+    });
+  }
+
+  function meetingDetail(id) {
+    var m = DB.meetings.filter(function (x) { return x.id === id; })[0];
+    if (!m) return toast('الاجتماع غير موجود', 'err');
+    var d = parseISO(m.date);
+    openModal({
+      title: m.title,
+      body: `<div class="row" style="gap:8px;flex-wrap:wrap">${mtBadge(m.type)}
+          <span class="chip">${DAYS[d.getDay()]} ${fmtDate(m.date)}</span>
+          <span class="chip">${esc(m.time)} · ${m.dur} دقيقة</span></div>
+        <div class="mt-3">
+          <dl class="kv">
+            <dt>المكان</dt><dd>${esc(m.place || '—')}</dd>
+            <dt>الرابط</dt><dd>${m.link ? `<a class="link ltr" href="${esc(m.link)}" target="_blank" rel="noopener">${esc(m.link)}</a>` : '—'}</dd>
+            <dt>المنظّم</dt><dd>${esc(nameOf(m.createdBy))}</dd>
+            <dt>المدعوون</dt><dd><div class="row" style="gap:6px;flex-wrap:wrap">${(m.attendees || []).map(function (id) {
+              var u = userById(id);
+              return u ? `<span class="chip">${esc(u.name)}</span>` : '';
+            }).join('')}</div></dd>
+          </dl>
+        </div>
+        ${m.agenda ? `<div class="panel mt-3"><div class="panel-body" style="font-size:13px;line-height:1.9;color:#D5DCD7;white-space:pre-wrap">${esc(m.agenda)}</div></div>` : ''}`,
+      foot: `${(isAdmin() || m.createdBy === S.uid) ? `
+          <button class="btn btn-ghost btn-sm" data-act="meetEdit" data-id="${m.id}">${ico('edit')} تعديل</button>
+          <button class="btn btn-danger btn-sm" data-act="meetDel" data-id="${m.id}">${ico('trash')} حذف</button>` : ''}
+        <div class="grow"></div>
+        <button class="btn btn-ghost btn-sm" data-act="closeModal">إغلاق</button>`
+    });
+  }
+
+  /* ------------------------------ 15. الفريق ------------------------------ */
+  function roleRank(r) { return r === 'admin' ? 0 : r === 'supervisor' ? 1 : 2; }
+
+  function teamView() {
+    var list = DB.users.slice().sort(function (a, b) {
+      if (roleRank(a.role) !== roleRank(b.role)) return roleRank(a.role) - roleRank(b.role);
+      return a.name.localeCompare(b.name, 'ar');
+    });
+    var activeCount = list.filter(function (u) { return u.active; }).length;
+
+    return `${pageHead('الفريق / الأعضاء', 'الفريق',
+      activeCount + ' عضو نشط — الأدوار تحدد الصلاحيات: الإدارة تُسند وتدير، المشرف يوزّع المهام، الموظف ينفّذ.',
+      isAdmin() ? `<button class="btn btn-primary btn-sm" data-act="userNew">${ico('plus')} عضو جديد</button>` : '')}
+
+      <div class="team-grid">
+        ${list.map(function (u) {
+          var tasks = visibleTasks().filter(function (t) { return t.assigneeId === u.id; });
+          var open = tasks.filter(function (t) { return t.status !== 'done'; }).length;
+          var done = tasks.filter(function (t) { return t.status === 'done'; }).length;
+          var late = tasks.filter(isLate).length;
+          return `<div class="member">
+            <div class="top">
+              ${avatar(u, 'lg')}
+              <div class="grow" style="min-width:0">
+                <div class="nm">${esc(u.name)}</div>
+                <div class="rl">${esc(u.title || ROLE[u.role])}</div>
+                <div class="row" style="gap:5px;margin-top:5px">
+                  <span class="badge-role">${ROLE[u.role]}</span>
+                  ${u.active ? '' : '<span class="badge b-off"><i></i>موقوف</span>'}
+                </div>
+              </div>
+            </div>
+
+            ${isAdmin() ? `<div class="row" style="gap:6px">
+              <span class="xs muted">الرمز</span>
+              <span class="code-pill">${(S.hideCodes[u.id] !== false) ? '••••' : esc(u.code)}</span>
+              <button class="btn-icon btn no-print" data-act="revealCode" data-id="${u.id}" title="إظهار/إخفاء"
+                style="width:26px;height:26px;min-height:26px;margin-inline-start:auto">${ico((S.hideCodes[u.id] !== false) ? 'shield' : 'lock')}</button>
+            </div>` : ''}
+
+            <div class="stats">
+              <div><b>${open}</b><span>مفتوحة</span></div>
+              <div><b class="green">${done}</b><span>مكتملة</span></div>
+              <div><b class="${late ? 'danger' : ''}">${late}</b><span>متأخرة</span></div>
+            </div>
+
+            <div class="acts">
+              ${(isStaff() || u.id === S.uid) ? `<button class="btn btn-ghost" data-act="memberTasks" data-id="${u.id}">${ico('task')} مهامه</button>` : ''}
+              ${isAdmin() ? `<button class="btn btn-ghost" data-act="userEdit" data-id="${u.id}">${ico('edit')} تعديل</button>` : ''}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+
+      ${isAdmin() ? `<div class="notice mt-3">${ico('shield')}
+        <div>رموز الدخول تُدار من هنا. يمكن أن يتشارك أكثر من حساب الرمز نفسه (مثل رمز الإدارة) — في هذه الحالة يظهر
+        اختيار الحساب عند تسجيل الدخول. غيّر الرموز دوريًا ووزّعها بشكل خاص.</div></div>` : ''}`;
+  }
+
+  function userModal(user) {
+    var u = user || null;
+    var isEdit = !!u;
+    if (!isAdmin()) return toast('غير مصرح', 'err');
+    openModal({
+      title: isEdit ? 'تعديل بيانات العضو' : 'إضافة عضو',
+      body: `<form data-form="user" data-id="${u ? u.id : ''}">
+        <div class="form-grid">
+          <div class="field span-2">
+            <label for="uName">الاسم <em>*</em></label>
+            <input id="uName" name="name" class="input" required maxlength="60" value="${u ? esc(u.name) : ''}" placeholder="الاسم الكامل">
+          </div>
+          <div class="field">
+            <label for="uRole">الدور</label>
+            <select id="uRole" name="role" class="select">
+              ${Object.keys(ROLE).map(function (k) {
+                return `<option value="${k}" ${(u ? u.role : 'employee') === k ? 'selected' : ''}>${ROLE[k]}</option>`;
+              }).join('')}
+            </select>
+          </div>
+          <div class="field">
+            <label for="uCode">رمز الدخول <em>*</em></label>
+            <input id="uCode" name="code" class="input ltr" required maxlength="24" value="${u ? esc(u.code) : ''}" placeholder="h123">
+          </div>
+          <div class="field">
+            <label for="uTitle">المسمى الوظيفي</label>
+            <input id="uTitle" name="title" class="input" value="${u ? esc(u.title || '') : ''}" placeholder="مثال: منفّذ مشاريع">
+          </div>
+          <div class="field">
+            <label for="uPhone">الهاتف</label>
+            <input id="uPhone" name="phone" class="input ltr" value="${u ? esc(u.phone || '') : ''}" placeholder="+20…">
+          </div>
+          <div class="field span-2">
+            <label class="switch"><input type="checkbox" name="active" ${(!u || u.active) ? 'checked' : ''}><i></i>
+              الحساب نشط (يمكنه تسجيل الدخول)</label>
+          </div>
+        </div>
+        <div class="notice mt-2">${ico('alert')}<div>الرمز حساس: أي شخص يعرفه يستطيع الدخول بهذا الحساب. استخدم رموزًا قصيرة وسهلة التذكّر لفريقك فقط.</div></div>
+        <div class="form-actions">
+          <button class="btn btn-primary" type="submit">${isEdit ? 'حفظ' : 'إضافة العضو'}</button>
+          <button class="btn btn-ghost" type="button" data-act="closeModal">إلغاء</button>
+        </div>
+      </form>`
+    });
+  }
+
+  /* ------------------------------ 16. التقارير ------------------------------ */
+  function reportsView() {
+    var period = S.rep || 'all';
+    var from = period === 'all' ? null : addDays(-Number(period));
+    var tasks = visibleTasks().filter(function (t) { return !from || (t.at && iso(new Date(t.at)) >= from); });
+    var done = tasks.filter(function (t) { return t.status === 'done'; });
+    var late = tasks.filter(isLate);
+    var rate = tasks.length ? Math.round(done.length / tasks.length * 100) : 0;
+    var members = DB.users.filter(function (u) { return u.active; }).sort(function (a, b) { return roleRank(a.role) - roleRank(b.role); });
+
+    var rows = members.map(function (u) {
+      var mine = tasks.filter(function (t) { return t.assigneeId === u.id; });
+      var d = mine.filter(function (t) { return t.status === 'done'; }).length;
+      var l = mine.filter(isLate).length;
+      var p = mine.filter(function (t) { return t.status === 'progress' || t.status === 'review'; }).length;
+      var r = mine.length ? Math.round(d / mine.length * 100) : 0;
+      return `<tr>
+        <td><div class="row" style="gap:8px">${avatar(u, 'sm')}<div><div class="t-strong">${esc(u.name)}</div>
+          <div class="t-sub">${ROLE[u.role]}</div></div></div></td>
+        <td>${mine.length}</td>
+        <td class="green">${d}</td>
+        <td>${p}</td>
+        <td class="${l ? 'danger' : ''}">${l}</td>
+        <td style="min-width:120px"><div class="row" style="gap:8px">${progressBar(r)}<span class="pct">${r}%</span></div></td>
+      </tr>`;
+    }).join('');
+
+    return `<div class="print-head">
+        <div class="row">${brandMark(30)}<b style="font-family:var(--font-h);font-size:15px">${esc(BRAND)} — ${esc(TEAM)}</b></div>
+        <div class="xs">تقرير أداء الفريق · ${fmtFull(todayISO())}</div>
+      </div>
+      ${pageHead('الفريق / التقارير', 'التقارير', 'ملخص أداء الفريق وحالة المهام — جاهز للطباعة أو التصدير.',
+        `<button class="btn btn-ghost btn-sm" data-act="print">${ico('print')} طباعة</button>
+         <button class="btn btn-ghost btn-sm" data-act="export">${ico('down')} تصدير البيانات</button>`)}
+
+      <div class="stats-band mb-2">
+        <div><b>${tasks.length}</b><span>إجمالي المهام</span></div>
+        <div><b>${done.length}</b><span>مكتملة</span></div>
+        <div><b class="${late.length ? 'danger' : ''}">${late.length}</b><span>متأخرة</span></div>
+        <div><b>${rate}<i>%</i></b><span>معدل الإنجاز</span></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">${ico('chart')} أداء الأعضاء</div>
+          <div class="seg no-print">
+            <button data-act="rep" data-v="7" class="${period === '7' ? 'on' : ''}">آخر 7 أيام</button>
+            <button data-act="rep" data-v="30" class="${period === '30' ? 'on' : ''}">آخر 30 يوم</button>
+            <button data-act="rep" data-v="all" class="${period === 'all' ? 'on' : ''}">الكل</button>
+          </div>
+        </div>
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr><th>العضو</th><th>المهام</th><th>مكتملة</th><th>قيد التنفيذ</th><th>متأخرة</th><th>معدل الإنجاز</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="split-eq mt-2">
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">${ico('grid')} توزيع الحالات</div></div>
+          <div class="panel-body">
+            <div class="donut-wrap">
+              ${donut([
+                { k: 'new', v: tasks.filter(function (t) { return t.status === 'new' && !isLate(t); }).length, color: '#6FA8C7' },
+                { k: 'progress', v: tasks.filter(function (t) { return t.status === 'progress' && !isLate(t); }).length, color: '#00C878' },
+                { k: 'review', v: tasks.filter(function (t) { return t.status === 'review' && !isLate(t); }).length, color: '#E5A93D' },
+                { k: 'late', v: late.length, color: '#E45B5B' },
+                { k: 'done', v: done.length, color: '#2F6B52' }
+              ], tasks.length, 'مهمة')}
+              <div class="legend">
+                ${Object.keys(ST).map(function (k) {
+                  var n = tasks.filter(function (t) { return t.status === k && !isLate(t); }).length;
+                  return `<div><i style="background:${k === 'new' ? '#6FA8C7' : k === 'progress' ? '#00C878' : k === 'review' ? '#E5A93D' : '#2F6B52'}"></i>${ST[k].l}<b>${n}</b></div>`;
+                }).join('')}
+                <div><i style="background:#E45B5B"></i>متأخرة<b>${late.length}</b></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">${ico('flag')} أولويات العمل</div><div class="panel-sub">المهام المفتوحة</div></div>
+          <div class="panel-body">
+            <div class="bars">
+              ${Object.keys(PR).map(function (k) {
+                var n = tasks.filter(function (t) { return t.priority === k && t.status !== 'done'; }).length;
+                var total = tasks.filter(function (t) { return t.priority === k; }).length;
+                return `<div class="b-row"><span>${PR[k].l}</span>
+                  <div class="b-track"><div class="b-fill" style="width:${total ? Math.round(n / total * 100) : 0}%"></div></div>
+                  <b>${n}</b></div>`;
+              }).join('')}
+            </div>
+            <div class="hint mt-2">النسبة تمثل المهام المفتوحة من إجمالي كل أولوية.</div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  /* ------------------------------ 17. الإشعارات ------------------------------ */
+  function notifsView() {
+    var mine = DB.notes.filter(function (n) { return n.userId === S.uid; });
+    var unread = mine.filter(function (n) { return !n.read; }).length;
+    return `${pageHead('النظام / الإشعارات', 'الإشعارات',
+      unread ? 'لديك ' + unread + ' إشعار غير مقروء.' : 'لا إشعارات غير مقروءة.',
+      mine.length ? `<button class="btn btn-ghost btn-sm" data-act="readAll">${ico('check')} تحديد الكل كمقروء</button>` : '')}
+      <div class="panel">
+        <div class="panel-body flush">
+          ${mine.length ? mine.map(function (n) {
+            return `<div class="list-item ${n.read ? '' : 'unread'}" data-act="notifOpen" data-id="${n.id}" style="cursor:pointer">
+              <div class="ico" style="width:32px;height:32px;border-radius:9px;display:grid;place-items:center;background:rgba(0,200,120,.1);color:var(--green);flex:0 0 auto">
+                ${ico(n.kind === 'meeting' ? 'cal' : 'task')}</div>
+              <div class="grow"><div class="tt">${esc(n.title)}</div><div class="ss">${esc(n.body)}</div>
+                <div class="xs muted" style="margin-top:4px">${fromNow(n.at)}</div></div>
+              ${n.read ? '' : '<span class="badge b-green"><i></i>جديد</span>'}
+            </div>`;
+          }).join('') : emptyBox('لا إشعارات')}
+        </div>
+      </div>`;
+  }
+
+  /* ------------------------------ 18. الإعدادات ------------------------------ */
+  function settingsView() {
+    var u = me();
+    var cloudState = sb ? (cloudOk ? '<span class="green">متصل</span>' : '<span class="warnc">غير متصل</span>') : '<span class="muted">محلي فقط</span>';
+    return `${pageHead('النظام / الإعدادات', 'الإعدادات', 'بيانات حسابك، أمان الدخول، والمزامنة.', '')}
+      <div class="split">
+        <div class="stack">
+          <div class="sec-card">
+            <h3>بيانات الحساب</h3>
+            <p class="d">اسمك ومسمّاك يظهران للفريق في المهام والاجتماعات.</p>
+            <form data-form="profile">
+              <div class="form-grid">
+                <div class="field"><label for="pName">الاسم</label>
+                  <input id="pName" name="name" class="input" value="${esc(u.name)}" required maxlength="60"></div>
+                <div class="field"><label for="pTitle">المسمى</label>
+                  <input id="pTitle" name="title" class="input" value="${esc(u.title || '')}" maxlength="60"></div>
+                <div class="field"><label>الدور</label>
+                  <input class="input" value="${ROLE[u.role]}" disabled></div>
+                <div class="field"><label for="pPhone">الهاتف</label>
+                  <input id="pPhone" name="phone" class="input ltr" value="${esc(u.phone || '')}" placeholder="+20…"></div>
+              </div>
+              <div class="form-actions"><button class="btn btn-primary btn-sm" type="submit">حفظ البيانات</button></div>
+            </form>
+          </div>
+
+          <div class="sec-card">
+            <h3>رمز الدخول</h3>
+            <p class="d">غيّر رمزك عند الحاجة. لن يتأثر باقي الفريق.</p>
+            <form data-form="code">
+              <div class="form-grid">
+                <div class="field"><label for="cCur">الرمز الحالي <em>*</em></label>
+                  <input id="cCur" name="current" class="input ltr" required></div>
+                <div class="field"><label for="cNew">الرمز الجديد <em>*</em></label>
+                  <input id="cNew" name="next" class="input ltr" required minlength="2" maxlength="24"></div>
+                <div class="field"><label for="cRep">تأكيد الرمز <em>*</em></label>
+                  <input id="cRep" name="confirm" class="input ltr" required minlength="2" maxlength="24"></div>
+              </div>
+              <div class="form-actions"><button class="btn btn-ghost btn-sm" type="submit">${ico('lock')} تحديث الرمز</button></div>
+            </form>
+          </div>
+        </div>
+
+        <div class="stack">
+          <div class="sec-card">
+            <h3>المزامنة السحابية</h3>
+            <p class="d">الحالة: ${cloudState}</p>
+            ${sb ? `<div class="notice green">${ico('check')}<div>المزامنة مفعّلة عبر Supabase. كل تعديل يُحفظ في السحابة بعد ثوانٍ.</div></div>`
+              : `<div class="notice">${ico('alert')}<div>النظام يعمل الآن محليًا على هذا الجهاز فقط. للمزامنة بين الأجهزة نفّذ
+                <b>supabase/schema.sql</b> ثم املأ SUPABASE_URL و SUPABASE_ANON_KEY أعلى الملف.</div></div>
+                <div class="code mt-2">window.DEC_CONFIG = {
+  SUPABASE_URL: "https://xxxx.supabase.co",
+  SUPABASE_ANON_KEY: "eyJhbGciOi..."
+}</div>`}
+            ${S.cloudErr ? `<div class="hint mt-2 danger">آخر خطأ: ${esc(S.cloudErr)}</div>` : ''}
+          </div>
+
+          <div class="sec-card">
+            <h3>البيانات</h3>
+            <p class="d">تصدير نسخة كاملة (JSON) أو استيرادها على جهاز آخر.</p>
+            <div class="row" style="gap:8px;flex-wrap:wrap">
+              <button class="btn btn-ghost btn-sm" data-act="export">${ico('down')} تصدير</button>
+              <button class="btn btn-ghost btn-sm" data-act="importFile">${ico('up')} استيراد</button>
+              <input type="file" id="importInput" accept="application/json" class="hide">
+            </div>
+            ${isAdmin() ? `<div class="divider mt-2"></div>
+              <div class="xs muted mt-2 mb-1">منطقة الخطر — تُعيد النظام للبيانات الافتراضية.</div>
+              <button class="btn btn-danger btn-sm" data-act="resetData">${ico('refresh')} إعادة تعيين النظام</button>` : ''}
+          </div>
+
+          <div class="sec-card">
+            <h3>عن النظام</h3>
+            <div class="stat-inline">
+              <div>الإصدار <b>${esc(VER)}</b></div>
+              <div>الفريق <b>${esc(TEAM)}</b></div>
+              <div>الأعضاء <b>${DB.users.length}</b></div>
+            </div>
+            <p class="d mt-2" style="margin-bottom:0">نظام إدارة داخلي بواجهة عربية — يعمل دون إنترنت بعد التحميل الأول.</p>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  /* ------------------------------ 19. الأحداث ------------------------------ */
+  function taskById(id) { return DB.tasks.filter(function (t) { return t.id === id; })[0] || null; }
+  function meetById(id) { return DB.meetings.filter(function (m) { return m.id === id; })[0] || null; }
+
+  document.addEventListener('click', function (e) {
+    var segBtn = e.target.closest('.seg button');
+    if (segBtn) {
+      var seg = segBtn.parentElement;
+      Array.prototype.forEach.call(seg.querySelectorAll('button'), function (b) {
+        b.classList.toggle('on', b === segBtn);
+      });
+      var hidden = seg.parentElement.querySelector('input[type="hidden"]');
+      if (hidden) hidden.value = segBtn.dataset.v;
+      return;
+    }
+
+    var el = e.target.closest('[data-act]');
+    if (!el) return;
+    var a = el.dataset.act, id = el.dataset.id, v = el.dataset.v;
+
+    switch (a) {
+      case 'backdrop':
+        if (e.target === el) closeModal();
+        break;
+      case 'closeModal':
+        closeModal();
+        break;
+      case 'toggleSide':
+        S.sideOpen = !S.sideOpen;
+        render();
+        break;
+      case 'logout':
+        logout();
+        break;
+      case 'pick':
+        enterAs(id);
+        break;
+      case 'backLogin':
+        renderLogin();
+        break;
+      case 'nav':
+        S.view = el.dataset.view;
+        S.sideOpen = false;
+        render();
+        window.scrollTo(0, 0);
+        break;
+      case 'fst':
+        S.f.st = v;
+        render();
+        break;
+      case 'clearFilters':
+        S.f = { q: '', st: '', who: '', pr: '' };
+        render();
+        break;
+      case 'taskNew':
+        taskModal();
+        break;
+      case 'taskOpen':
+        taskDetail(id);
+        break;
+      case 'taskEdit':
+        closeModal();
+        var te = taskById(id);
+        if (te) taskModal(te);
+        break;
+      case 'taskDel':
+        var td = taskById(id);
+        if (!td) break;
+        confirmBox('حذف المهمة', 'سيتم حذف "' + td.title + '" نهائيًا مع تعليقاتها. هل تريد المتابعة؟', 'حذف نهائي', function () {
+          DB.tasks = DB.tasks.filter(function (x) { return x.id !== id; });
+          log(S.uid, 'حذف مهمة', td.title);
+          save(); render(); toast('تم حذف المهمة');
+        });
+        break;
+      case 'taskDone':
+        var tk = taskById(id);
+        if (!tk) break;
+        tk.status = 'done'; tk.progress = 100;
+        log(S.uid, 'أكمل مهمة', tk.title);
+        notify([tk.createdBy], 'اكتملت مهمة', tk.title + ' — بواسطة ' + me().name, 'task', tk.id);
+        save(); render(); toast('تم إغلاق المهمة كمكتملة');
+        break;
+      case 'setStatus':
+        var ts = taskById(id);
+        if (!ts) break;
+        ts.status = v;
+        if (v === 'done') ts.progress = 100;
+        else if (v === 'new' && ts.progress === 100) ts.progress = 0;
+        log(S.uid, 'حدّث حالة مهمة إلى ' + (ST[v] ? ST[v].l : v), ts.title);
+        notify([ts.createdBy === S.uid ? ts.assigneeId : ts.createdBy], 'تحديث حالة مهمة',
+          ts.title + ' — ' + (ST[v] ? ST[v].l : v), 'task', ts.id);
+        save(); render(); taskDetail(id); toast('تم تحديث الحالة');
+        break;
+      case 'meetNew':
+        meetingModal(null);
+        break;
+      case 'meetOpen':
+        meetingDetail(id);
+        break;
+      case 'meetEdit':
+        closeModal();
+        var me1 = meetById(id);
+        if (me1) meetingModal(me1);
+        break;
+      case 'meetDel':
+        var md = meetById(id);
+        if (!md) break;
+        confirmBox('حذف الاجتماع', 'سيتم حذف "' + md.title + '" من التقويم.', 'حذف', function () {
+          DB.meetings = DB.meetings.filter(function (x) { return x.id !== id; });
+          log(S.uid, 'حذف اجتماعًا', md.title);
+          save(); render(); toast('تم حذف الاجتماع');
+        });
+        break;
+      case 'dayClick':
+        if (isStaff()) meetingModal(null, el.dataset.date);
+        else toast('العرض فقط — إنشاء الاجتماعات متاح للإدارة والمشرف', 'warn');
+        break;
+      case 'calPrev':
+        S.calRef = new Date(S.calRef.getFullYear(), S.calRef.getMonth() - 1, 1);
+        render();
+        break;
+      case 'calNext':
+        S.calRef = new Date(S.calRef.getFullYear(), S.calRef.getMonth() + 1, 1);
+        render();
+        break;
+      case 'calToday':
+        S.calRef = new Date();
+        render();
+        break;
+      case 'userNew':
+        userModal(null);
+        break;
+      case 'userEdit':
+        var uu = userById(id);
+        if (uu) userModal(uu);
+        break;
+      case 'revealCode':
+        S.hideCodes[id] = (S.hideCodes[id] === false);
+        render();
+        break;
+      case 'memberTasks':
+        S.f = { q: '', st: '', who: id, pr: '' };
+        S.view = 'tasks';
+        S.sideOpen = false;
+        render();
+        break;
+      case 'rep':
+        S.rep = v;
+        render();
+        break;
+      case 'readAll':
+        DB.notes.forEach(function (n) { if (n.userId === S.uid) n.read = true; });
+        save(); render(); toast('تم تحديد كل الإشعارات كمقروءة');
+        break;
+      case 'notifOpen':
+        var n = DB.notes.filter(function (x) { return x.id === id; })[0];
+        if (!n) break;
+        n.read = true; save();
+        if (n.kind === 'task' && taskById(n.refId)) taskDetail(n.refId);
+        else if (n.kind === 'meeting' && meetById(n.refId)) meetingDetail(n.refId);
+        else { render(); }
+        render();
+        break;
+      case 'print':
+        window.print();
+        break;
+      case 'export':
+        exportData();
+        break;
+      case 'importFile':
+        var fi = document.getElementById('importInput');
+        if (fi) fi.click();
+        break;
+      case 'resetData':
+        confirmBox('إعادة تعيين النظام', 'سيتم حذف كل المهام والاجتماعات والملاحظات واستعادة البيانات الافتراضية. لا يمكن التراجع.', 'إعادة التعيين', function () {
+          DB = seed(); normalize();
+          if (!me()) { S.uid = null; persistSession(); }
+          save(); render(); toast('تمت إعادة تعيين النظام');
+        });
+        break;
+      case 'resetOrder':
+        setTimeout(function () {
+          Array.prototype.forEach.call(document.querySelectorAll('.order-hero .pick'), function (p) { p.classList.remove('on'); });
+          var pi = document.getElementById('ordPrio');
+          if (pi) Array.prototype.forEach.call(pi.querySelectorAll('button'), function (b, i) { b.classList.toggle('on', i === 1); });
+          var du = document.getElementById('ordDue');
+          if (du) Array.prototype.forEach.call(du.querySelectorAll('button'), function (b, i) { b.classList.toggle('on', i === 1); });
+          var h1 = pi && pi.parentElement.querySelector('input[type="hidden"]');
+          var h2 = du && du.parentElement.querySelector('input[type="hidden"]');
+          if (h1) h1.value = 'med';
+          if (h2) h2.value = '1';
+        }, 10);
+        break;
+    }
+  });
+
+  document.addEventListener('submit', function (e) {
+    var f = e.target;
+    var kind = f.dataset.form;
+    if (!kind) return;
+    e.preventDefault();
+
+    if (kind === 'login') {
+      doLogin((f.querySelector('[name="code"]') || {}).value);
+      return;
+    }
+
+    if (kind === 'task') {
+      var title = (f.querySelector('[name="title"]').value || '').trim();
+      var assigneeId = f.querySelector('[name="assigneeId"]').value;
+      if (!title) return toast('اكتب عنوان المهمة', 'err');
+      if (!userById(assigneeId)) return toast('اختر المسند إليه', 'err');
+      var tags = (f.querySelector('[name="tags"]').value || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean);
+      var payload = {
+        title: title,
+        desc: (f.querySelector('[name="desc"]').value || '').trim(),
+        assigneeId: assigneeId,
+        priority: f.querySelector('[name="priority"]').value,
+        due: f.querySelector('[name="due"]').value || '',
+        status: f.querySelector('[name="status"]').value,
+        tags: tags
+      };
+      var editId = f.dataset.id;
+      if (editId) {
+        var t = taskById(editId);
+        if (!t) return;
+        var oldAssignee = t.assigneeId;
+        Object.assign(t, payload);
+        if (t.status === 'done') t.progress = 100;
+        log(S.uid, 'عدّل مهمة', t.title);
+        if (oldAssignee !== t.assigneeId) {
+          notify([t.assigneeId], 'مهمة جديدة', t.title + ' — استحقاق ' + fmtDate(t.due), 'task', t.id);
+        }
+        toast('تم حفظ التعديلات');
+      } else {
+        var nt = {
+          id: uid('t'), title: payload.title, desc: payload.desc, assigneeId: payload.assigneeId,
+          createdBy: S.uid, priority: payload.priority, status: payload.status,
+          progress: payload.status === 'done' ? 100 : 0, due: payload.due, tags: payload.tags,
+          at: Date.now(), comments: []
+        };
+        DB.tasks.unshift(nt);
+        log(S.uid, 'أنشأ مهمة', nt.title);
+        notify([nt.assigneeId], 'مهمة جديدة من ' + me().name,
+          nt.title + (nt.due ? ' — استحقاق ' + fmtDate(nt.due) : ''), 'task', nt.id);
+        toast('تم إنشاء المهمة وإشعار المسند إليه');
+      }
+      save(); closeModal(); render();
+      return;
+    }
+
+    if (kind === 'order') {
+      var ot = (f.querySelector('[name="title"]').value || '').trim();
+      var who = Array.prototype.map.call(f.querySelectorAll('[name="who"]:checked'), function (x) { return x.value; });
+      if (!ot) return toast('اكتب نص الأمر أولًا', 'err');
+      if (!who.length) return toast('اختر موظفًا واحدًا على الأقل', 'err');
+      var prio = f.querySelector('[name="priority"]').value;
+      var dueIn = Number(f.querySelector('[name="dueIn"]').value) || 0;
+      var note = (f.querySelector('[name="note"]').value || '').trim();
+      var due = addDays(dueIn);
+      who.forEach(function (wid) {
+        var task = {
+          id: uid('t'), title: ot, desc: note, assigneeId: wid, createdBy: S.uid,
+          priority: prio, status: 'new', progress: 0, due: due, tags: ['أمر سريع'],
+          at: Date.now(), comments: []
+        };
+        DB.tasks.unshift(task);
+        notify([wid], 'أمر مهمة من ' + me().name, ot + (due ? ' — المهلة ' + fmtDate(due) : ''), 'task', task.id);
+      });
+      log(S.uid, 'أرسل أمرًا إلى ' + who.length + ' موظف', ot);
+      save();
+      render();
+      toast('تم إرسال الأمر إلى ' + who.length + ' ' + (who.length === 1 ? 'موظف' : 'موظفين'));
+      return;
+    }
+
+    if (kind === 'meet') {
+      var mt = (f.querySelector('[name="title"]').value || '').trim();
+      var mdate = f.querySelector('[name="date"]').value;
+      var mtime = f.querySelector('[name="time"]').value;
+      if (!mt) return toast('اكتب عنوان الاجتماع', 'err');
+      if (!mdate || !mtime) return toast('حدّد التاريخ والوقت', 'err');
+      var mAtt = Array.prototype.map.call(f.querySelectorAll('[name="who"]:checked'), function (x) { return x.value; });
+      var mPayload = {
+        title: mt, type: f.querySelector('[name="type"]').value, date: mdate, time: mtime,
+        dur: Number(f.querySelector('[name="dur"]').value) || 30,
+        place: (f.querySelector('[name="place"]').value || '').trim(),
+        link: (f.querySelector('[name="link"]').value || '').trim(),
+        agenda: (f.querySelector('[name="agenda"]').value || '').trim(),
+        attendees: mAtt
+      };
+      var mid = f.dataset.id;
+      if (mid) {
+        var m0 = meetById(mid);
+        if (!m0) return;
+        Object.assign(m0, mPayload);
+        log(S.uid, 'عدّل اجتماعًا', m0.title);
+        notify(mAtt, 'تحديث اجتماع', m0.title + ' — ' + fmtDate(m0.date) + ' ' + m0.time, 'meeting', m0.id);
+        toast('تم حفظ الاجتماع');
+      } else {
+        var nm = Object.assign({ id: uid('m'), createdBy: S.uid, at: Date.now() }, mPayload);
+        DB.meetings.push(nm);
+        log(S.uid, 'جدول اجتماعًا', nm.title);
+        notify(mAtt, 'دعوة اجتماع', nm.title + ' — ' + fmtDate(nm.date) + ' ' + nm.time + (nm.place ? ' · ' + nm.place : ''), 'meeting', nm.id);
+        toast('تمت جدولة الاجتماع وإشعار المدعوين');
+      }
+      save(); closeModal(); render();
+      return;
+    }
+
+    if (kind === 'user') {
+      var un = (f.querySelector('[name="name"]').value || '').trim();
+      var uc = (f.querySelector('[name="code"]').value || '').trim();
+      if (!un || !uc) return toast('الاسم والرمز مطلوبان', 'err');
+      var uidv = f.dataset.id;
+      var role = f.querySelector('[name="role"]').value;
+      var active = f.querySelector('[name="active"]').checked;
+      if (uidv) {
+        var u0 = userById(uidv);
+        if (!u0) return;
+        if (u0.id === S.uid && (!active || role !== 'admin') && u0.role === 'admin') {
+          var admins = DB.users.filter(function (x) { return x.role === 'admin' && x.active; });
+          if (admins.length <= 1) return toast('لا يمكن إزالة آخر مدير نشط', 'err');
+        }
+        u0.name = un; u0.code = uc; u0.role = role; u0.active = active;
+        u0.title = (f.querySelector('[name="title"]').value || '').trim();
+        u0.phone = (f.querySelector('[name="phone"]').value || '').trim();
+        log(S.uid, 'عدّل عضوًا', u0.name);
+        toast('تم تحديث بيانات العضو');
+      } else {
+        var dup = DB.users.some(function (x) { return String(x.code).toLowerCase() === uc.toLowerCase(); });
+        DB.users.push({
+          id: uid('u'), name: un, code: uc, role: role, active: active,
+          title: (f.querySelector('[name="title"]').value || '').trim(),
+          phone: (f.querySelector('[name="phone"]').value || '').trim(),
+          since: todayISO()
+        });
+        log(S.uid, 'أضاف عضوًا', un);
+        toast(dup ? 'تمت الإضافة (رمز مشترك — سيُطلب اختيار الحساب عند الدخول)' : 'تمت إضافة العضو');
+      }
+      save(); closeModal(); render();
+      return;
+    }
+
+    if (kind === 'comment') {
+      var tid = f.dataset.id;
+      var text = (f.querySelector('[name="text"]').value || '').trim();
+      if (!text) return;
+      var t1 = taskById(tid);
+      if (!t1) return;
+      t1.comments.push({ id: uid('c'), by: S.uid, text: text, at: Date.now() });
+      log(S.uid, 'علّق على مهمة', t1.title);
+      notify([t1.assigneeId === S.uid ? t1.createdBy : t1.assigneeId], 'تعليق جديد',
+        me().name + ': ' + text.slice(0, 60), 'task', t1.id);
+      save(); render(); taskDetail(tid); toast('تم إضافة التعليق');
+      return;
+    }
+
+    if (kind === 'profile') {
+      var pu = me();
+      pu.name = (f.querySelector('[name="name"]').value || '').trim() || pu.name;
+      pu.title = (f.querySelector('[name="title"]').value || '').trim();
+      pu.phone = (f.querySelector('[name="phone"]').value || '').trim();
+      save(); render(); toast('تم تحديث بياناتك');
+      return;
+    }
+
+    if (kind === 'code') {
+      var cu = me();
+      var cur = (f.querySelector('[name="current"]').value || '').trim();
+      var nx = (f.querySelector('[name="next"]').value || '').trim();
+      var cf = (f.querySelector('[name="confirm"]').value || '').trim();
+      if (cur.toLowerCase() !== String(cu.code).toLowerCase()) return toast('الرمز الحالي غير صحيح', 'err');
+      if (nx !== cf) return toast('الرمز الجديد والتأكيد غير متطابقين', 'err');
+      if (nx.length < 2) return toast('الرمز قصير جدًا', 'err');
+      cu.code = nx;
+      log(S.uid, 'غيّر رمز الدخول', cu.name);
+      save(); render(); toast('تم تحديث رمز الدخول');
+      return;
+    }
+  });
+
+  document.addEventListener('input', function (e) {
+    var t = e.target;
+    if (t.id === 'taskSearch') {
+      S.f.q = t.value;
+      clearTimeout(t._tm);
+      t._tm = setTimeout(refreshTaskTable, 180);
+    }
+    if (t.id === 'gsearch') {
+      S.f.q = t.value;
+      if (S.view !== 'tasks') {
+        S.view = 'tasks';
+        render();
+        var g = document.getElementById('gsearch');
+        if (g) { g.focus(); g.setSelectionRange(g.value.length, g.value.length); }
+      } else {
+        clearTimeout(t._tm);
+        t._tm = setTimeout(refreshTaskTable, 180);
+      }
+    }
+  });
+
+  document.addEventListener('change', function (e) {
+    var t = e.target;
+    if (t.matches && t.matches('.pick input')) {
+      var lab = t.closest('.pick');
+      if (lab) lab.classList.toggle('on', t.checked);
+    }
+    if (t.id === 'fWho') { S.f.who = t.value; refreshTaskTable(); }
+    if (t.id === 'fPr') { S.f.pr = t.value; refreshTaskTable(); }
+    if (t.id === 'importInput' && t.files && t.files[0]) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        try {
+          var parsed = JSON.parse(reader.result);
+          if (!parsed || !Array.isArray(parsed.users) || !parsed.users.length) throw new Error('ملف غير صالح');
+          DB = parsed; normalize(); save();
+          if (!me()) { S.uid = null; persistSession(); renderLogin(); }
+          else render();
+          toast('تم استيراد البيانات');
+        } catch (err) { toast('تعذّر قراءة الملف: ' + err.message, 'err'); }
+      };
+      reader.readAsText(t.files[0]);
+      t.value = '';
+    }
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      if (modalRoot.innerHTML) closeModal();
+      else if (S.sideOpen) { S.sideOpen = false; render(); }
+    }
+  });
+
+  /* ------------------------------ 20. تصدير ------------------------------ */
+  function exportData() {
+    var blob = new Blob([JSON.stringify(DB, null, 2)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'dec-backup-' + todayISO() + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    toast('تم تصدير نسخة من البيانات');
+  }
+
+  /* ------------------------------ 21. الإقلاع ------------------------------ */
+  function boot() {
+    initCloud();
+    load();
+    restoreSession();
+    var paint = function () {
+      render();
+      var b = document.getElementById('boot');
+      if (b) b.classList.add('done');
+    };
+    if (sb) {
+      cloudPull().then(paint).catch(paint);
+      setTimeout(function () {
+        var b = document.getElementById('boot');
+        if (b && !b.classList.contains('done')) paint();
+      }, 3500);
+    } else {
+      paint();
+    }
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+
+})();
+</script>
+</body>
+</html>
